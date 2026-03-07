@@ -1,0 +1,339 @@
+import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
+import { getAudioUrl, getImg, getArtistStr, getSongById, getUrlForQuality } from '@/lib/api';
+import { toast } from 'sonner';
+
+interface PlayerState {
+  currentSong: any | null;
+  queue: any[];
+  queueIdx: number;
+  isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  volume: number;
+  shuffle: boolean;
+  repeat: boolean;
+  likedSongs: any[];
+  savedPlaylists: any[];
+  preferredQuality: string;
+  expandedOpen: boolean;
+  queueOpen: boolean;
+}
+
+interface PlayerContextType extends PlayerState {
+  audioRef: React.RefObject<HTMLAudioElement>;
+  loadAndPlay: (song: any) => Promise<void>;
+  playQueue: (songs: any[], idx: number) => void;
+  togglePlay: () => void;
+  playNext: () => void;
+  playPrev: () => void;
+  toggleShuffle: () => void;
+  toggleRepeat: () => void;
+  setVolume: (v: number) => void;
+  seek: (time: number) => void;
+  toggleLike: (song: any) => void;
+  isLiked: (id: string) => boolean;
+  savePlaylist: (pl: any) => void;
+  unsavePlaylist: (id: string) => void;
+  isPlaylistSaved: (id: string) => boolean;
+  setQuality: (q: string) => void;
+  setExpandedOpen: (v: boolean) => void;
+  setQueueOpen: (v: boolean) => void;
+  stopPlayer: () => void;
+}
+
+const PlayerContext = createContext<PlayerContextType | null>(null);
+
+export const usePlayer = () => {
+  const ctx = useContext(PlayerContext);
+  if (!ctx) throw new Error('usePlayer must be used within PlayerProvider');
+  return ctx;
+};
+
+export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const [currentSong, setCurrentSong] = useState<any | null>(null);
+  const [queue, setQueue] = useState<any[]>([]);
+  const [queueIdx, setQueueIdx] = useState(-1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolumeState] = useState(1);
+  const [shuffle, setShuffle] = useState(false);
+  const [repeat, setRepeat] = useState(false);
+  const [expandedOpen, setExpandedOpen] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(false);
+
+  const [likedSongs, setLikedSongs] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('liked') || '[]'); } catch { return []; }
+  });
+  const [savedPlaylists, setSavedPlaylists] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('savedPlaylists') || '[]'); } catch { return []; }
+  });
+  const [preferredQuality, setPreferredQuality] = useState(() =>
+    localStorage.getItem('preferredQuality') || '320kbps'
+  );
+
+  // Persist
+  useEffect(() => { localStorage.setItem('liked', JSON.stringify(likedSongs)); }, [likedSongs]);
+  useEffect(() => { localStorage.setItem('savedPlaylists', JSON.stringify(savedPlaylists)); }, [savedPlaylists]);
+  useEffect(() => { localStorage.setItem('preferredQuality', preferredQuality); }, [preferredQuality]);
+
+  // Audio events
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onLoadedMetadata = () => setDuration(audio.duration || 0);
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onEnded = () => {
+      if (!repeat) playNextInternal();
+    };
+    const onError = () => {
+      toast.error('Audio error — trying next');
+      setTimeout(playNextInternal, 1000);
+    };
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
+    };
+  }, [repeat, shuffle, queue]);
+
+  const playNextInternal = useCallback(() => {
+    if (queue.length === 0) return;
+    let nextIdx: number;
+    if (shuffle) {
+      nextIdx = Math.floor(Math.random() * queue.length);
+    } else {
+      nextIdx = (queueIdx + 1) % queue.length;
+    }
+    setQueueIdx(nextIdx);
+    loadSong(queue[nextIdx]);
+  }, [queue, queueIdx, shuffle]);
+
+  const loadSong = async (song: any) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    try {
+      let songData = song;
+      if (!songData.downloadUrl || !Array.isArray(songData.downloadUrl) || !songData.downloadUrl.length) {
+        const res = await getSongById(song.id);
+        songData = (res.data && (Array.isArray(res.data) ? res.data[0] : res.data)) || song;
+      }
+
+      setCurrentSong(songData);
+
+      const url = getAudioUrl(songData, preferredQuality);
+      if (!url) { toast.error('No audio URL found'); return; }
+
+      audio.src = url;
+      audio.play().catch(() => toast.error('Playback failed'));
+
+      // Media Session
+      if ('mediaSession' in navigator) {
+        try {
+          const artworkUrl = getImg(songData.image, '500x500');
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: songData.name || songData.title || 'Unknown',
+            artist: getArtistStr(songData),
+            album: songData.album?.name || '',
+            artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }] : [],
+          });
+        } catch {}
+      }
+    } catch {
+      toast.error('Failed to load song');
+    }
+  };
+
+  const loadAndPlay = useCallback(async (song: any) => {
+    const existingIdx = queue.findIndex(s => s.id === song.id);
+    if (existingIdx !== -1) {
+      setQueueIdx(existingIdx);
+    } else {
+      setQueue([song]);
+      setQueueIdx(0);
+    }
+    await loadSong(song);
+  }, [queue, preferredQuality]);
+
+  const playQueue = useCallback((songs: any[], idx: number) => {
+    setQueue(songs);
+    setQueueIdx(idx);
+    loadSong(songs[idx]);
+  }, [preferredQuality]);
+
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) audio.play().catch(() => toast.error('Playback failed'));
+    else audio.pause();
+  }, []);
+
+  const playNext = useCallback(() => {
+    if (queue.length === 0) return;
+    if (repeat) {
+      const audio = audioRef.current;
+      if (audio) { audio.currentTime = 0; audio.play(); }
+      return;
+    }
+    let nextIdx: number;
+    if (shuffle) nextIdx = Math.floor(Math.random() * queue.length);
+    else nextIdx = (queueIdx + 1) % queue.length;
+    setQueueIdx(nextIdx);
+    loadSong(queue[nextIdx]);
+  }, [queue, queueIdx, shuffle, repeat, preferredQuality]);
+
+  const playPrev = useCallback(() => {
+    if (queue.length === 0) return;
+    const audio = audioRef.current;
+    if (audio && audio.currentTime > 3) { audio.currentTime = 0; return; }
+    const prevIdx = (queueIdx - 1 + queue.length) % queue.length;
+    setQueueIdx(prevIdx);
+    loadSong(queue[prevIdx]);
+  }, [queue, queueIdx, preferredQuality]);
+
+  const toggleShuffle = useCallback(() => {
+    setShuffle(p => { toast.info(!p ? 'Shuffle on' : 'Shuffle off'); return !p; });
+  }, []);
+
+  const toggleRepeat = useCallback(() => {
+    setRepeat(p => {
+      const next = !p;
+      if (audioRef.current) audioRef.current.loop = next;
+      toast.info(next ? 'Repeat on' : 'Repeat off');
+      return next;
+    });
+  }, []);
+
+  const setVolume = useCallback((v: number) => {
+    setVolumeState(v);
+    if (audioRef.current) audioRef.current.volume = v;
+  }, []);
+
+  const seek = useCallback((time: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  }, []);
+
+  const toggleLike = useCallback((song: any) => {
+    setLikedSongs(prev => {
+      const idx = prev.findIndex(s => s.id === song.id);
+      if (idx === -1) {
+        toast.success('Added to liked songs ♥');
+        return [...prev, song];
+      } else {
+        toast.info('Removed from liked songs');
+        return prev.filter(s => s.id !== song.id);
+      }
+    });
+  }, []);
+
+  const isLiked = useCallback((id: string) => likedSongs.some(s => s.id === id), [likedSongs]);
+
+  const savePlaylist = useCallback((pl: any) => {
+    setSavedPlaylists(prev => {
+      if (prev.some(p => p.id === pl.id)) return prev;
+      toast.success('Playlist saved');
+      return [...prev, pl];
+    });
+  }, []);
+
+  const unsavePlaylist = useCallback((id: string) => {
+    setSavedPlaylists(prev => {
+      toast.info('Playlist removed');
+      return prev.filter(p => p.id !== id);
+    });
+  }, []);
+
+  const isPlaylistSaved = useCallback((id: string) => savedPlaylists.some(p => p.id === id), [savedPlaylists]);
+
+  const setQuality = useCallback((q: string) => {
+    setPreferredQuality(q);
+    toast.info(`Quality: ${q}`);
+    // If playing, switch URL
+    if (currentSong && audioRef.current) {
+      const newUrl = getUrlForQuality(currentSong, q);
+      if (newUrl) {
+        const pos = audioRef.current.currentTime;
+        const wasPlaying = !audioRef.current.paused;
+        audioRef.current.src = newUrl;
+        audioRef.current.currentTime = pos;
+        if (wasPlaying) audioRef.current.play().catch(() => {});
+      }
+    }
+  }, [currentSong]);
+
+  const stopPlayer = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) { audio.pause(); audio.src = ''; }
+    setCurrentSong(null);
+    setQueue([]);
+    setQueueIdx(-1);
+    setIsPlaying(false);
+    setExpandedOpen(false);
+    setQueueOpen(false);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT') return;
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          if (currentSong) togglePlay();
+          break;
+        case 'ArrowRight':
+          if (audioRef.current) audioRef.current.currentTime = Math.min(audioRef.current.currentTime + 10, audioRef.current.duration || 0);
+          break;
+        case 'ArrowLeft':
+          if (audioRef.current) audioRef.current.currentTime = Math.max(audioRef.current.currentTime - 10, 0);
+          break;
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [currentSong, togglePlay]);
+
+  // Media Session handlers
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.setActionHandler('play', () => audioRef.current?.play());
+    navigator.mediaSession.setActionHandler('pause', () => audioRef.current?.pause());
+    navigator.mediaSession.setActionHandler('nexttrack', playNext);
+    navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+  }, [playNext, playPrev]);
+
+  return (
+    <PlayerContext.Provider value={{
+      currentSong, queue, queueIdx, isPlaying, currentTime, duration,
+      volume, shuffle, repeat, likedSongs, savedPlaylists, preferredQuality,
+      expandedOpen, queueOpen, audioRef,
+      loadAndPlay, playQueue, togglePlay, playNext, playPrev,
+      toggleShuffle, toggleRepeat, setVolume, seek, toggleLike, isLiked,
+      savePlaylist, unsavePlaylist, isPlaylistSaved, setQuality,
+      setExpandedOpen, setQueueOpen, stopPlayer,
+    }}>
+      {children}
+      <audio ref={audioRef} preload="metadata" />
+    </PlayerContext.Provider>
+  );
+};
