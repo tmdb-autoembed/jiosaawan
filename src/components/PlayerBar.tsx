@@ -1,95 +1,104 @@
-import { useMusicContext } from '@/contexts/MusicContext';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Volume2, Heart } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
-import { motion } from 'framer-motion';
-
-const formatTime = (s: number) => {
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, '0')}`;
-};
+import { usePlayer } from '@/contexts/PlayerContext';
+import { getImg, getArtistStr, fmtTime } from '@/lib/api';
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, X } from 'lucide-react';
 
 const PlayerBar = () => {
   const {
-    currentTrack, isPlaying, togglePlay, next, previous,
+    currentSong, isPlaying, togglePlay, playNext, playPrev,
     currentTime, duration, seek, volume, setVolume,
     shuffle, toggleShuffle, repeat, toggleRepeat,
-    favorites, toggleFavorite,
-  } = useMusicContext();
+    setExpandedOpen, stopPlayer,
+  } = usePlayer();
 
-  if (!currentTrack) return null;
+  if (!currentSong) return null;
 
-  const isFav = favorites.includes(currentTrack.id);
+  const imgUrl = getImg(currentSong.image, '150x150');
+  const pct = duration ? (currentTime / duration) * 100 : 0;
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const p = (e.clientX - rect.left) / rect.width;
+    seek(p * (duration || 0));
+  };
 
   return (
-    <motion.div
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border"
-    >
-      <div className="max-w-screen-xl mx-auto px-4 py-3">
-        {/* Progress bar */}
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-muted-foreground w-10 text-right">{formatTime(currentTime)}</span>
-          <Slider
-            value={[currentTime]}
-            max={duration || 100}
-            step={0.1}
-            onValueChange={([v]) => seek(v)}
-            className="flex-1"
+    <div className="fixed bottom-0 left-0 right-0 z-[200] glass border-t border-border/30 max-w-[600px] mx-auto">
+      <div className="px-3 pt-2 pb-1">
+        {/* Top row */}
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <img
+            src={imgUrl}
+            alt=""
+            className={`w-11 h-11 rounded-full object-cover border-2 border-background nm-flat cursor-pointer ${
+              isPlaying ? 'animate-vinyl-spin' : ''
+            }`}
+            style={{ boxShadow: '0 0 0 2px #000, 0 6px 15px rgba(0,0,0,0.8), inset 0 2px 6px rgba(255,255,255,0.05)' }}
+            onClick={() => setExpandedOpen(true)}
           />
-          <span className="text-xs text-muted-foreground w-10">{formatTime(duration)}</span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          {/* Track info */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className={`w-10 h-10 rounded-lg ${currentTrack.coverGradient} flex-shrink-0`} />
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate text-foreground">{currentTrack.title}</p>
-              <p className="text-xs text-muted-foreground truncate">{currentTrack.artist}</p>
-            </div>
-            <button onClick={() => toggleFavorite(currentTrack.id)} className="flex-shrink-0">
-              <Heart className={`w-4 h-4 ${isFav ? 'fill-accent text-accent' : 'text-muted-foreground'}`} />
-            </button>
+          <div
+            className="flex-1 min-w-0 cursor-pointer"
+            onClick={() => setExpandedOpen(true)}
+          >
+            <p className="text-sm font-bold truncate text-foreground">{currentSong.name || currentSong.title || 'Unknown'}</p>
+            <p className="text-[11px] text-muted-foreground truncate">{getArtistStr(currentSong)}</p>
           </div>
-
-          {/* Controls */}
-          <div className="flex items-center gap-3">
-            <button onClick={toggleShuffle} className={shuffle ? 'text-primary' : 'text-muted-foreground'}>
+          <div className="flex items-center gap-1">
+            <button onClick={toggleShuffle} className={`p-1.5 rounded-full transition-colors ${shuffle ? 'text-primary' : 'text-muted-foreground'}`}>
               <Shuffle className="w-4 h-4" />
             </button>
-            <button onClick={previous} className="text-foreground hover:text-primary transition-colors">
-              <SkipBack className="w-5 h-5" />
+            <button onClick={playPrev} className="p-1.5 text-muted-foreground hover:text-foreground">
+              <SkipBack className="w-4 h-4" />
             </button>
             <button
               onClick={togglePlay}
-              className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center glow-primary hover:scale-105 transition-transform"
+              className={`w-11 h-11 rounded-full nm-surface nm-raised flex items-center justify-center text-primary transition-all ${
+                isPlaying ? 'glow-green' : ''
+              }`}
             >
-              {isPlaying ? <Pause className="w-5 h-5 text-primary-foreground" /> : <Play className="w-5 h-5 text-primary-foreground ml-0.5" />}
+              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
             </button>
-            <button onClick={next} className="text-foreground hover:text-primary transition-colors">
-              <SkipForward className="w-5 h-5" />
+            <button onClick={playNext} className="p-1.5 text-muted-foreground hover:text-foreground">
+              <SkipForward className="w-4 h-4" />
             </button>
-            <button onClick={toggleRepeat} className={repeat !== 'off' ? 'text-primary' : 'text-muted-foreground'}>
-              {repeat === 'one' ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-4 h-4" />}
+            <button onClick={toggleRepeat} className={`p-1.5 rounded-full transition-colors ${repeat ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Repeat className="w-4 h-4" />
             </button>
-          </div>
-
-          {/* Volume */}
-          <div className="flex items-center gap-2 flex-1 justify-end">
-            <Volume2 className="w-4 h-4 text-muted-foreground" />
-            <Slider
-              value={[volume * 100]}
-              max={100}
-              step={1}
-              onValueChange={([v]) => setVolume(v / 100)}
-              className="w-24"
-            />
+            <button onClick={stopPlayer} className="p-1.5 text-muted-foreground hover:text-accent">
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
+
+        {/* Progress */}
+        <div className="relative">
+          <div
+            className="w-full h-1 bg-secondary nm-inset rounded cursor-pointer"
+            onClick={handleProgressClick}
+          >
+            <div className="h-full progress-gradient rounded" style={{ width: `${pct}%` }} />
+          </div>
+          <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-0.5">
+            <span>{fmtTime(currentTime)}</span>
+            <span>{fmtTime(duration)}</span>
+          </div>
+        </div>
+
+        {/* Volume */}
+        <div className="flex items-center gap-2 pb-1">
+          <span className="text-[10px] text-muted-foreground">🔈</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={volume}
+            onChange={(e) => setVolume(parseFloat(e.target.value))}
+            className="flex-1 h-1.5 appearance-none rounded bg-secondary cursor-pointer accent-primary"
+          />
+          <span className="text-[10px] text-muted-foreground">🔊</span>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
