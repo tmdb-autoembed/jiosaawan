@@ -31,7 +31,7 @@ const TopBar = () => {
     const p = location.pathname;
     if (p === '/') return 'home';
     if (p === '/profile') return 'profile';
-    if (p.startsWith('/podcasts')) return 'podcasts';
+    if (p.startsWith('/search/podcasts')) return 'podcasts';
     if (p.startsWith('/search/songs')) return 'songs';
     if (p.startsWith('/search/albums')) return 'albums';
     if (p.startsWith('/search/artists')) return 'artists';

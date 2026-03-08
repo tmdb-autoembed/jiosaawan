@@ -136,8 +136,12 @@ const TabSearch = ({ type }: { type: string }) => {
           {results.map((song, i) => <SongItem key={`${song.id}-${i}`} song={song} songList={results} songIdx={i} />)}
         </div>
       ) : type === 'artists' ? (
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
           {results.map(item => <MusicCard key={item.id} item={item} type="artists" />)}
+        </div>
+      ) : type === 'podcasts' ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {results.map(item => <MusicCard key={item.id || item._id} item={item} type="podcasts" />)}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
