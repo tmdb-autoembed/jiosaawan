@@ -223,7 +223,7 @@ const Index = () => {
                 <button
                   onClick={loadMoreSongs}
                   disabled={songsLoadingMore}
-                  className="flex-1 py-2.5 bg-gradient-primary rounded-2xl text-sm font-bold text-primary-foreground flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="flex-1 py-2.5 btn-3d-primary rounded-2xl text-sm font-bold text-primary-foreground flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {songsLoadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More'}
                 </button>
