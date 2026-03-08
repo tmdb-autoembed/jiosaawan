@@ -14,9 +14,9 @@ const fetchFnMap: Record<string, (q: string, l: number, p: number) => Promise<an
 
 const TabSearch = ({ type }: { type: string }) => {
   const [params] = useSearchParams();
-  const q = params.get('q') || 'trending hindi songs';
+  const q = params.get('q') || '';
   const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -26,6 +26,7 @@ const TabSearch = ({ type }: { type: string }) => {
     setResults([]);
     setPage(1);
     setHasMore(true);
+    if (!q.trim()) { setLoading(false); return; }
     setLoading(true);
     const fn = fetchFnMap[type];
     if (!fn) return;
