@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, X, Home, Music, Disc3, Star, ListMusic, User, Mic2, Radio } from 'lucide-react';
+import { Search, X, Home, Music, Disc3, Star, ListMusic, User, Radio, Headphones } from 'lucide-react';
 
 const tabs = [
-  { id: 'home', label: 'Home', icon: Home, path: '/', gradient: 'from-emerald-400 to-cyan-400' },
-  { id: 'songs', label: 'Songs', icon: Music, path: '/search/songs', gradient: 'from-pink-500 to-rose-400' },
-  { id: 'albums', label: 'Albums', icon: Disc3, path: '/search/albums', gradient: 'from-violet-500 to-purple-400' },
-  { id: 'artists', label: 'Artists', icon: Star, path: '/search/artists', gradient: 'from-amber-400 to-orange-400' },
-  { id: 'playlists', label: 'Playlists', icon: ListMusic, path: '/search/playlists', gradient: 'from-blue-500 to-cyan-400' },
-  { id: 'podcasts', label: 'Podcasts', icon: Radio, path: '/podcasts', gradient: 'from-fuchsia-500 to-pink-400' },
-  { id: 'profile', label: 'Profile', icon: User, path: '/profile', gradient: 'from-teal-400 to-emerald-400' },
+  { id: 'home', label: 'Home', icon: Home, path: '/' },
+  { id: 'songs', label: 'Songs', icon: Music, path: '/search/songs' },
+  { id: 'albums', label: 'Albums', icon: Disc3, path: '/search/albums' },
+  { id: 'artists', label: 'Artists', icon: Star, path: '/search/artists' },
+  { id: 'playlists', label: 'Playlists', icon: ListMusic, path: '/search/playlists' },
+  { id: 'podcasts', label: 'Podcasts', icon: Radio, path: '/podcasts' },
+  { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
 
 const TopBar = () => {
@@ -49,30 +49,32 @@ const TopBar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-[100] glass border-b border-border/30 px-4 py-3 space-y-3">
-      {/* Logo Row */}
+    <header className="sticky top-0 z-[100] glass border-b border-border/20 px-4 py-3 space-y-3">
+      {/* Logo */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-8 h-8 rounded-xl bg-gradient-primary flex items-center justify-center">
-            <Mic2 className="w-4 h-4 text-primary-foreground" />
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg glow-primary">
+            <Headphones className="w-5 h-5 text-primary-foreground" />
           </div>
-          <span className="text-lg font-black text-gradient tracking-tight">SoundWave</span>
+          <div>
+            <span className="text-lg font-bold text-gradient" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>BeatFlow</span>
+          </div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="flex items-center bg-secondary/60 border border-border/40 rounded-2xl overflow-hidden focus-within:border-primary/30 transition-colors">
+      <div className="flex items-center bg-secondary/50 border border-border/30 rounded-2xl overflow-hidden focus-within:border-primary/40 focus-within:shadow-[0_0_0_2px_hsla(25,100%,60%,0.1)] transition-all">
         <Search className="w-4 h-4 text-muted-foreground ml-3.5 flex-shrink-0" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && doSearch()}
-          placeholder="Search songs, artists, albums, podcasts…"
-          className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
+          placeholder="Search songs, artists, albums…"
+          className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none"
         />
         {query && (
-          <button onClick={clearSearch} className="px-2 text-muted-foreground hover:text-accent transition-colors">
+          <button onClick={clearSearch} className="px-2.5 text-muted-foreground hover:text-accent transition-colors">
             <X className="w-4 h-4" />
           </button>
         )}
@@ -84,13 +86,13 @@ const TopBar = () => {
           <button
             key={tab.id}
             onClick={() => handleTabClick(tab)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all ${
+            className={`rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all duration-200 ${
               activeTab === tab.id
-                ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg`
-                : 'bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+                ? 'bg-gradient-primary text-primary-foreground shadow-lg glow-primary'
+                : 'bg-secondary/40 text-muted-foreground hover:text-foreground hover:bg-secondary/70'
             }`}
           >
-            <tab.icon className="w-3 h-3" />
+            <tab.icon className="w-3.5 h-3.5" />
             {tab.label}
           </button>
         ))}

@@ -29,23 +29,21 @@ const PlayerBar = () => {
       animate={{ y: 0, opacity: 1 }}
       className="fixed bottom-0 left-0 right-0 z-[200] max-w-[600px] mx-auto"
     >
-      {/* Top gradient line */}
-      <div className="h-[2px] w-full progress-gradient" />
+      {/* Progress line at top */}
+      <div className="w-full h-[2px] bg-secondary/30 cursor-pointer" onClick={handleProgressClick}>
+        <motion.div className="h-full progress-gradient" style={{ width: `${pct}%` }} />
+      </div>
 
-      <div className="glass-vibrant px-3 pt-2 pb-1.5">
-        {/* Top row */}
-        <div className="flex items-center gap-2.5 mb-1.5">
+      <div className="glass-vibrant px-3 pt-2.5 pb-2">
+        <div className="flex items-center gap-3">
           {/* Album art */}
           <div className="relative cursor-pointer" onClick={() => setExpandedOpen(true)}>
-            <div className={`absolute inset-0 rounded-full blur-md opacity-50 ${isPlaying ? 'animate-pulse' : ''}`}
-              style={{ background: 'var(--gradient-primary)' }}
-            />
             <motion.img
               src={imgUrl}
               alt=""
               animate={{ rotate: isPlaying ? 360 : 0 }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-              className="relative w-11 h-11 rounded-full object-cover border-2 border-primary/30"
+              transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+              className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
             />
             {isPlaying && (
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 scale-50">
@@ -54,14 +52,16 @@ const PlayerBar = () => {
             )}
           </div>
 
+          {/* Song info */}
           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedOpen(true)}>
-            <p className="text-sm font-bold truncate text-foreground">{currentSong.name || currentSong.title || 'Unknown'}</p>
+            <p className="text-sm font-semibold truncate text-foreground">{currentSong.name || currentSong.title || 'Unknown'}</p>
             <p className="text-[11px] text-muted-foreground truncate">{getArtistStr(currentSong)}</p>
           </div>
 
+          {/* Controls */}
           <div className="flex items-center gap-0.5">
-            <button onClick={toggleShuffle} className={`p-1.5 rounded-full transition-all ${shuffle ? 'text-accent2' : 'text-muted-foreground'}`}>
-              <Shuffle className="w-4 h-4" />
+            <button onClick={toggleShuffle} className={`p-1.5 rounded-full transition-all ${shuffle ? 'text-accent3' : 'text-muted-foreground/60'}`}>
+              <Shuffle className="w-3.5 h-3.5" />
             </button>
             <button onClick={playPrev} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
               <SkipBack className="w-4 h-4" />
@@ -69,32 +69,27 @@ const PlayerBar = () => {
             <motion.button
               onClick={togglePlay}
               whileTap={{ scale: 0.9 }}
-              className={`w-11 h-11 rounded-full flex items-center justify-center text-primary-foreground transition-all ${isPlaying ? 'glow-primary' : ''}`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center text-primary-foreground ${isPlaying ? 'animate-play-pulse' : ''}`}
               style={{ background: 'var(--gradient-primary)' }}
             >
-              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+              {isPlaying ? <Pause className="w-4.5 h-4.5" /> : <Play className="w-4.5 h-4.5 ml-0.5" />}
             </motion.button>
             <button onClick={playNext} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
               <SkipForward className="w-4 h-4" />
             </button>
-            <button onClick={toggleRepeat} className={`p-1.5 rounded-full transition-all ${repeat ? 'text-accent3' : 'text-muted-foreground'}`}>
-              <Repeat className="w-4 h-4" />
+            <button onClick={toggleRepeat} className={`p-1.5 rounded-full transition-all ${repeat ? 'text-accent2' : 'text-muted-foreground/60'}`}>
+              <Repeat className="w-3.5 h-3.5" />
             </button>
-            <button onClick={stopPlayer} className="p-1.5 text-muted-foreground hover:text-accent transition-colors">
-              <X className="w-4 h-4" />
+            <button onClick={stopPlayer} className="p-1 text-muted-foreground/40 hover:text-accent transition-colors">
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Progress */}
-        <div className="relative">
-          <div className="w-full h-1.5 bg-secondary/50 rounded-full cursor-pointer overflow-hidden" onClick={handleProgressClick}>
-            <motion.div className="h-full rounded-full progress-gradient" style={{ width: `${pct}%` }} />
-          </div>
-          <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-0.5">
-            <span>{fmtTime(currentTime)}</span>
-            <span>{fmtTime(duration)}</span>
-          </div>
+        {/* Time */}
+        <div className="flex justify-between text-[9px] text-muted-foreground/40 mt-1 px-0.5">
+          <span>{fmtTime(currentTime)}</span>
+          <span>{fmtTime(duration)}</span>
         </div>
       </div>
     </motion.div>
