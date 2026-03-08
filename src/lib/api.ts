@@ -94,6 +94,9 @@ export async function globalSearch(query: string) {
 export async function getAlbumById(id: string) {
   return fetchJson(`${API}/albums?id=${id}`);
 }
+export async function getAlbumByLink(link: string) {
+  return fetchJson(`${API}/albums?link=${encodeURIComponent(link)}`);
+}
 export async function getArtistById(id: string, opts?: { page?: number; songCount?: number; albumCount?: number; sortBy?: string; sortOrder?: string }) {
   const params = new URLSearchParams();
   if (opts?.page) params.set('page', String(opts.page));
@@ -104,8 +107,18 @@ export async function getArtistById(id: string, opts?: { page?: number; songCoun
   const qs = params.toString();
   return fetchJson(`${API}/artists/${id}${qs ? '?' + qs : ''}`);
 }
-export async function getArtistByName(query: string, opts?: { sortBy?: string; sortOrder?: string; songCount?: number; albumCount?: number }) {
+export async function getArtistByLink(link: string, opts?: { page?: number; songCount?: number; albumCount?: number; sortBy?: string; sortOrder?: string }) {
+  const params = new URLSearchParams({ link });
+  if (opts?.page) params.set('page', String(opts.page));
+  if (opts?.songCount) params.set('songCount', String(opts.songCount));
+  if (opts?.albumCount) params.set('albumCount', String(opts.albumCount));
+  if (opts?.sortBy) params.set('sortBy', opts.sortBy);
+  if (opts?.sortOrder) params.set('sortOrder', opts.sortOrder);
+  return fetchJson(`${API}/artists?${params}`);
+}
+export async function getArtistByName(query: string, opts?: { searchLimit?: number; sortBy?: string; sortOrder?: string; songCount?: number; albumCount?: number }) {
   const params = new URLSearchParams({ query });
+  if (opts?.searchLimit) params.set('searchLimit', String(opts.searchLimit));
   if (opts?.sortBy) params.set('sortBy', opts.sortBy);
   if (opts?.sortOrder) params.set('sortOrder', opts.sortOrder);
   if (opts?.songCount) params.set('songCount', String(opts.songCount));
@@ -127,8 +140,14 @@ export async function getArtistAlbums(id: string, page = 1, limit = 20, sortBy?:
 export async function getPlaylistById(id: string, page = 1, limit = 50) {
   return fetchJson(`${API}/playlists?id=${id}&page=${page}&limit=${limit}`);
 }
+export async function getPlaylistByLink(link: string, page = 1, limit = 50) {
+  return fetchJson(`${API}/playlists?link=${encodeURIComponent(link)}&page=${page}&limit=${limit}`);
+}
 export async function getSongById(id: string) {
   return fetchJson(`${API}/songs/${id}`);
+}
+export async function getSongByLink(link: string) {
+  return fetchJson(`${API}/songs?link=${encodeURIComponent(link)}`);
 }
 export async function getSongsByIds(ids: string[]) {
   return fetchJson(`${API}/songs?ids=${ids.join(',')}`);
@@ -140,6 +159,12 @@ export async function getLyrics(song: any) {
     ? `${API}/lyrics/${encodeURIComponent(song.lyricsId)}`
     : `${API}/lyrics?query=${encodeURIComponent(song.name || song.title || '')}`;
   return fetchJson(url);
+}
+export async function getLyricsById(id: string) {
+  return fetchJson(`${API}/lyrics/${id}`);
+}
+export async function getLyricsByQuery(query: string, limit = 5) {
+  return fetchJson(`${API}/lyrics?query=${encodeURIComponent(query)}&limit=${limit}`);
 }
 export async function getSyncedLyrics(songId: string) {
   return fetchJson(`${API}/lyrics/${songId}/sync`);
@@ -171,6 +196,11 @@ export async function getPodcastById(id: string, page = 1, limit = 20, sortOrder
   if (sortOrder) params.set('sortOrder', sortOrder);
   return fetchJson(`${API}/podcasts/${id}?${params}`);
 }
+export async function getPodcastByLink(link: string, page = 1, limit = 20, sortOrder?: string) {
+  const params = new URLSearchParams({ link, page: String(page), limit: String(limit) });
+  if (sortOrder) params.set('sortOrder', sortOrder);
+  return fetchJson(`${API}/podcasts?${params}`);
+}
 export async function searchPodcasts(query: string, page = 1, limit = 20) {
   return fetchJson(`${API}/podcasts?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
 }
@@ -180,7 +210,7 @@ export async function getRelatedArtists(id: string, page = 1, limit = 20) {
   return fetchJson(`${API}/artists/${id}/related?page=${page}&limit=${limit}`);
 }
 
-// ---- Song Suggestions ----
+// ---- Song Suggestions (for auto-play / infinite playback) ----
 export async function getSongSuggestions(id: string, limit = 10) {
   return fetchJson(`${API}/songs/${id}/suggestions?limit=${limit}`);
 }
