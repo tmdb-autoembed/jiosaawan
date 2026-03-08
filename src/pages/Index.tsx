@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  getTrending, getTrendingSongs, getTrendingAlbums,
-  getTrendingPlaylists, getTrendingArtists, getTrendingPodcasts,
+  getTrending, getTrendingPlaylists, getTrendingPodcasts,
   searchSongs,
 } from '@/lib/api';
 import SongItem from '@/components/SongItem';
@@ -32,11 +31,13 @@ const quickFilters = [
   { label: '🎼 Ghazals', query: 'best ghazals hindi' },
 ];
 
+// pagination config per section
+// albums: no pagination, artists: no pagination, playlists: page only, podcasts: page+limit
 const sectionConfig = [
-  { key: 'albums', title: 'Hot Albums', icon: Disc3, gradient: 'from-violet-500 to-indigo-500', fetchFn: getTrendingAlbums },
-  { key: 'playlists', title: 'Popular Playlists', icon: ListMusic, gradient: 'from-sky-500 to-blue-600', fetchFn: getTrendingPlaylists },
-  { key: 'artists', title: 'Top Artists', icon: Star, gradient: 'from-amber-400 to-orange-500', fetchFn: getTrendingArtists },
-  { key: 'podcasts', title: 'Trending Podcasts', icon: Radio, gradient: 'from-pink-500 to-fuchsia-500', fetchFn: getTrendingPodcasts },
+  { key: 'albums', title: 'Hot Albums', icon: Disc3, gradient: 'from-violet-500 to-indigo-500', canPaginate: false },
+  { key: 'playlists', title: 'Popular Playlists', icon: ListMusic, gradient: 'from-sky-500 to-blue-600', canPaginate: true },
+  { key: 'artists', title: 'Top Artists', icon: Star, gradient: 'from-amber-400 to-orange-500', canPaginate: false },
+  { key: 'podcasts', title: 'Trending Podcasts', icon: Radio, gradient: 'from-pink-500 to-fuchsia-500', canPaginate: true },
 ];
 
 const Index = () => {
@@ -52,21 +53,19 @@ const Index = () => {
   const [songsLoading, setSongsLoading] = useState(true);
   const [songsLoadingMore, setSongsLoadingMore] = useState(false);
 
-  const songsSentinelRef = useRef<HTMLDivElement>(null);
-
   // Load trending sections
   useEffect(() => {
     setLoading(true);
     getTrending(1, 20).then(res => {
       if (res?.data) {
         const data: Record<string, SectionData> = {};
-        for (const { key } of sectionConfig) {
+        for (const { key, canPaginate } of sectionConfig) {
           const sectionData = res.data[key];
           const items = sectionData?.results || [];
           data[key] = {
             items,
             page: sectionData?.page || 1,
-            hasMore: sectionData?.hasMore ?? items.length >= 20,
+            hasMore: canPaginate ? (sectionData?.hasMore ?? items.length >= 20) : false,
             loading: false,
           };
         }
@@ -106,39 +105,38 @@ const Index = () => {
     }
   }, [songsPage, songsHasMore, songsLoadingMore, activeFilter]);
 
-  // Infinite scroll for songs
-  useEffect(() => {
-    if (!songsSentinelRef.current || !songsHasMore || songsLoading) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) loadMoreSongs(); },
-      { rootMargin: '300px' }
-    );
-    obs.observe(songsSentinelRef.current);
-    return () => obs.disconnect();
-  }, [songsHasMore, loadMoreSongs, songsLoading]);
-
   const loadMore = useCallback(async (key: string) => {
     const section = sections[key];
     if (!section || section.loading || !section.hasMore) return;
 
     setSections(prev => ({ ...prev, [key]: { ...prev[key], loading: true } }));
 
-    const config = sectionConfig.find(s => s.key === key);
-    if (!config) return;
-
     try {
       const nextPage = section.page + 1;
-      const res = await config.fetchFn(nextPage, 20);
+      let res: any;
+      if (key === 'playlists') {
+        res = await getTrendingPlaylists(nextPage);
+      } else if (key === 'podcasts') {
+        res = await getTrendingPodcasts(nextPage, 30);
+      } else {
+        // albums/artists don't paginate
+        setSections(prev => ({ ...prev, [key]: { ...prev[key], loading: false, hasMore: false } }));
+        return;
+      }
       const newItems = res?.data?.results || [];
-      setSections(prev => ({
-        ...prev,
-        [key]: {
-          items: [...prev[key].items, ...newItems],
-          page: nextPage,
-          hasMore: res?.data?.hasMore ?? newItems.length >= 20,
-          loading: false,
-        },
-      }));
+      if (newItems.length === 0) {
+        setSections(prev => ({ ...prev, [key]: { ...prev[key], loading: false, hasMore: false } }));
+      } else {
+        setSections(prev => ({
+          ...prev,
+          [key]: {
+            items: [...prev[key].items, ...newItems],
+            page: nextPage,
+            hasMore: res?.data?.hasMore ?? newItems.length >= 20,
+            loading: false,
+          },
+        }));
+      }
     } catch {
       setSections(prev => ({ ...prev, [key]: { ...prev[key], loading: false } }));
     }
@@ -210,7 +208,7 @@ const Index = () => {
           ))}
         </div>
 
-        {/* Songs List - Infinite Scroll */}
+        {/* Songs List with Load More button */}
         {songsLoading ? (
           <div className="flex items-center justify-center py-10">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -225,9 +223,13 @@ const Index = () => {
               ))}
             </div>
             {songsHasMore ? (
-              <div ref={songsSentinelRef} className="flex justify-center py-4">
-                {songsLoadingMore && <Loader2 className="w-5 h-5 text-primary animate-spin" />}
-              </div>
+              <button
+                onClick={loadMoreSongs}
+                disabled={songsLoadingMore}
+                className="w-full mt-3 py-2.5 btn-3d-glass rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                {songsLoadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More Songs'}
+              </button>
             ) : (
               <p className="text-center text-xs text-muted-foreground/50 py-4 font-medium">— No more results —</p>
             )}
@@ -236,7 +238,7 @@ const Index = () => {
       </motion.section>
 
       {/* Other Sections */}
-      {sectionConfig.map(({ key, title, icon: Icon, gradient }, sIdx) => {
+      {sectionConfig.map(({ key, title, icon: Icon, gradient, canPaginate }, sIdx) => {
         const section = sections[key];
         if (!section || !section.items.length) return null;
 
@@ -262,29 +264,36 @@ const Index = () => {
             </div>
 
             {key === 'artists' ? (
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 justify-items-center">
                 {section.items.map((item: any) => (
                   <MusicCard key={item.id} item={item} type="artists" />
                 ))}
               </div>
+            ) : key === 'albums' ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 justify-items-center">
+                {section.items.map((item: any) => (
+                  <MusicCard key={item.id || item._id} item={item} type="albums" />
+                ))}
+              </div>
             ) : (
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 justify-items-center">
                 {section.items.map((item: any) => (
                   <MusicCard key={item.id || item._id} item={item} type={key as any} />
                 ))}
               </div>
             )}
-            {section.hasMore ? (
+
+            {canPaginate && section.hasMore ? (
               <button
                 onClick={() => loadMore(key)}
                 disabled={section.loading}
-                className="w-full mt-2 py-2.5 card-surface rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 hover:bg-primary/5 transition-colors disabled:opacity-50"
+                className="w-full mt-3 py-2.5 btn-3d-glass rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {section.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `Load More ${title.split(' ')[1] || ''}`}
               </button>
-            ) : section.items.length > 0 && (
+            ) : canPaginate && section.items.length > 0 && !section.hasMore ? (
               <p className="text-center text-xs text-muted-foreground/50 py-3 font-medium">— No more results —</p>
-            )}
+            ) : null}
           </motion.section>
         );
       })}

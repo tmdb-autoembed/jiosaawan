@@ -182,16 +182,20 @@ export async function getTrending(page = 1, limit = 20) {
 export async function getTrendingSongs(page = 1, limit = 20) {
   return fetchJson(`${API}/trending/songs?page=${page}&limit=${limit}`);
 }
-export async function getTrendingAlbums(page = 1, limit = 20) {
-  return fetchJson(`${API}/trending/albums?page=${page}&limit=${limit}`);
+// Albums: NO pagination support
+export async function getTrendingAlbums() {
+  return fetchJson(`${API}/trending/albums`);
 }
-export async function getTrendingPlaylists(page = 1, limit = 20) {
-  return fetchJson(`${API}/trending/playlists?page=${page}&limit=${limit}`);
+// Playlists: page works but NO limit param
+export async function getTrendingPlaylists(page = 1) {
+  return fetchJson(`${API}/trending/playlists?page=${page}`);
 }
-export async function getTrendingArtists(page = 1, limit = 20) {
-  return fetchJson(`${API}/trending/artists?page=${page}&limit=${limit}`);
+// Artists: only page=1, no limit param, no further pages
+export async function getTrendingArtists() {
+  return fetchJson(`${API}/trending/artists?page=1`);
 }
-export async function getTrendingPodcasts(page = 1, limit = 20) {
+// Podcasts: page + limit both work
+export async function getTrendingPodcasts(page = 1, limit = 30) {
   return fetchJson(`${API}/trending/podcasts?page=${page}&limit=${limit}`);
 }
 
