@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { getImg, getArtistStr, fmtTime, getUrlForQuality, getAudioUrl } from '@/lib/api';
-import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Share2, Heart, Download, Sliders } from 'lucide-react';
+import { getImg, getArtistStr, fmtTime, getUrlForQuality, getAudioUrl, getSongShareLink, getSongRingtone } from '@/lib/api';
+import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Share2, Heart, Download, Sliders, Bell, Link } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,9 +9,9 @@ import Equalizer from './Equalizer';
 import WaveBars from './WaveBars';
 
 const QUALITY_OPTIONS = [
-  { value: '96kbps', label: '96', color: 'from-gray-500 to-gray-600' },
-  { value: '160kbps', label: '160', color: 'from-blue-500 to-cyan-500' },
-  { value: '320kbps', label: '320', color: 'from-violet-500 to-fuchsia-500' },
+  { value: '96kbps', label: '96', gradient: 'from-gray-500 to-gray-600' },
+  { value: '160kbps', label: '160', gradient: 'from-blue-500 to-cyan-500' },
+  { value: '320kbps', label: '320', gradient: 'from-emerald-500 to-teal-400' },
 ];
 
 const ExpandedPlayer = () => {
@@ -37,13 +37,36 @@ const ExpandedPlayer = () => {
     seek(p * (duration || 0));
   };
 
-  const handleShare = () => {
-    const title = currentSong.name || currentSong.title || 'Unknown';
-    const artist = getArtistStr(currentSong);
-    if (navigator.share) {
-      navigator.share({ title, text: `🎵 ${title} — ${artist}`, url: window.location.href }).catch(() => {});
-    } else {
-      navigator.clipboard?.writeText(window.location.href).then(() => toast.success('Link copied! 🔗'));
+  const handleShare = async () => {
+    try {
+      const res = await getSongShareLink(currentSong.id);
+      const shareUrl = res?.data?.shareUrl || res?.data?.url || window.location.href;
+      const title = currentSong.name || currentSong.title || 'Unknown';
+      const artist = getArtistStr(currentSong);
+      if (navigator.share) {
+        navigator.share({ title, text: `🎵 ${title} — ${artist}`, url: shareUrl }).catch(() => {});
+      } else {
+        navigator.clipboard?.writeText(shareUrl).then(() => toast.success('Link copied! 🔗'));
+      }
+    } catch {
+      navigator.clipboard?.writeText(window.location.href).then(() => toast.success('Link copied!'));
+    }
+  };
+
+  const handleRingtone = async () => {
+    toast.info('Fetching ringtone…');
+    try {
+      const res = await getSongRingtone(currentSong.id);
+      if (res?.data?.previewUrl) {
+        window.open(res.data.previewUrl, '_blank');
+        toast.success('Ringtone preview opened!');
+      } else if (res?.data?.url) {
+        window.open(res.data.url, '_blank');
+      } else {
+        toast.error('Ringtone not available');
+      }
+    } catch {
+      toast.error('Ringtone not available');
     }
   };
 
@@ -81,201 +104,150 @@ const ExpandedPlayer = () => {
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
       className="fixed inset-0 z-[500] flex flex-col overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, hsl(280 30% 12%) 0%, hsl(250 25% 8%) 50%, hsl(320 20% 6%) 100%)',
+        background: 'linear-gradient(180deg, hsl(230 25% 8%) 0%, hsl(230 30% 5%) 40%, hsl(160 20% 5%) 100%)',
       }}
     >
-      {/* Animated background orbs */}
+      {/* Background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-40 h-40 bg-violet-600/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-40 right-5 w-32 h-32 bg-fuchsia-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-40 left-20 w-48 h-48 bg-cyan-600/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-16 left-8 w-44 h-44 bg-primary/10 rounded-full blur-[80px] animate-pulse" />
+        <div className="absolute top-32 right-4 w-36 h-36 bg-accent/10 rounded-full blur-[60px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-32 left-16 w-52 h-52 bg-accent3/8 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      <div className="relative flex-1 flex flex-col items-center px-6 pt-6 pb-4 overflow-y-auto">
+      <div className="relative flex-1 flex flex-col items-center px-6 pt-5 pb-4 overflow-y-auto">
         {/* Header */}
         <div className="w-full flex items-center justify-between mb-4">
-          <button
-            onClick={() => setExpandedOpen(false)}
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm"
-          >
-            <ChevronDown className="w-5 h-5" />
+          <button onClick={() => setExpandedOpen(false)} className="w-9 h-9 rounded-full bg-secondary/40 flex items-center justify-center">
+            <ChevronDown className="w-5 h-5 text-foreground" />
           </button>
-          <span className="text-xs font-semibold uppercase tracking-wider text-gradient">Now Playing</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gradient">Now Playing</span>
           <button
             onClick={() => setShowEqualizer(!showEqualizer)}
-            className={`p-2 rounded-full transition-all ${showEqualizer ? 'bg-gradient-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${showEqualizer ? 'bg-gradient-primary text-primary-foreground' : 'bg-secondary/40 text-muted-foreground'}`}
           >
-            <Sliders className="w-5 h-5" />
+            <Sliders className="w-4 h-4" />
           </button>
         </div>
 
         <AnimatePresence mode="wait">
           {showEqualizer ? (
-            <motion.div
-              key="equalizer"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full flex-1"
-            >
+            <motion.div key="equalizer" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full flex-1">
               <Equalizer />
             </motion.div>
           ) : (
-            <motion.div
-              key="player"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full flex flex-col items-center"
-            >
-              {/* Album Art with glow */}
+            <motion.div key="player" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full flex flex-col items-center">
+              {/* Album Art */}
               <div className="relative mb-6">
-                {/* Glow ring */}
-                <div 
-                  className={`absolute inset-0 rounded-full blur-xl opacity-60 ${isPlaying ? 'animate-pulse' : ''}`}
-                  style={{ background: 'linear-gradient(135deg, hsl(280, 100%, 50%), hsl(320, 100%, 50%))' }}
+                <div className={`absolute inset-0 rounded-full blur-2xl opacity-40 ${isPlaying ? 'animate-pulse' : ''}`}
+                  style={{ background: 'var(--gradient-primary)' }}
                 />
                 <motion.img
                   src={imgUrl}
                   alt=""
                   animate={{ rotate: isPlaying ? 360 : 0 }}
                   transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                  className="relative w-56 h-56 rounded-full object-cover border-4 border-white/10"
-                  style={{ boxShadow: '0 0 0 4px rgba(0,0,0,0.3), 0 25px 50px rgba(0,0,0,0.5)' }}
+                  className="relative w-52 h-52 rounded-full object-cover border-4 border-primary/20"
+                  style={{ boxShadow: '0 0 0 4px rgba(0,0,0,0.3), 0 25px 60px rgba(0,0,0,0.5)' }}
                 />
-                {/* Vinyl hole */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-900 to-black border-4 border-white/5" />
+                  <div className="w-14 h-14 rounded-full bg-background/90 border-4 border-secondary/50" />
                 </div>
-                {/* Wave bars overlay */}
                 {isPlaying && (
-                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
                     <WaveBars />
                   </div>
                 )}
               </div>
 
               {/* Title */}
-              <h2 className="text-xl font-extrabold text-foreground text-center mb-1 max-w-full truncate">
+              <h2 className="text-xl font-black text-foreground text-center mb-1 max-w-full truncate">
                 {currentSong.name || currentSong.title || '—'}
               </h2>
-              <p className="text-sm text-muted-foreground text-center mb-6">{getArtistStr(currentSong) || '—'}</p>
+              <p className="text-sm text-muted-foreground text-center mb-5">{getArtistStr(currentSong) || '—'}</p>
 
               {/* Progress */}
               <div className="w-full mb-2">
-                <div
-                  className="w-full h-2 bg-white/10 rounded-full cursor-pointer overflow-hidden"
-                  onClick={handleProgressClick}
-                >
-                  <motion.div 
-                    className="h-full rounded-full"
-                    style={{ 
-                      width: `${pct}%`,
-                      background: 'linear-gradient(90deg, hsl(280, 100%, 65%), hsl(320, 100%, 60%), hsl(200, 100%, 60%))'
-                    }}
-                  />
+                <div className="w-full h-2 bg-secondary/40 rounded-full cursor-pointer overflow-hidden" onClick={handleProgressClick}>
+                  <motion.div className="h-full rounded-full progress-gradient" style={{ width: `${pct}%` }} />
                 </div>
-                <div className="flex justify-between text-xs text-muted-foreground/60 mt-1.5">
+                <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-1.5">
                   <span>{fmtTime(currentTime)}</span>
                   <span>{fmtTime(duration)}</span>
                 </div>
               </div>
 
               {/* Main Controls */}
-              <div className="flex items-center justify-center gap-5 my-4 w-full">
-                <button 
-                  onClick={toggleShuffle} 
-                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                    shuffle ? 'bg-gradient-primary text-white shadow-lg shadow-violet-500/30' : 'bg-white/5 text-muted-foreground hover:text-foreground'
-                  }`}
-                >
+              <div className="flex items-center justify-center gap-4 my-4 w-full">
+                <button onClick={toggleShuffle} className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${shuffle ? 'bg-gradient-gold text-white glow-gold' : 'bg-secondary/30 text-muted-foreground'}`}>
                   <Shuffle className="w-5 h-5" />
                 </button>
-                <button 
-                  onClick={playPrev} 
-                  className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all"
-                >
+                <button onClick={playPrev} className="w-11 h-11 rounded-full bg-secondary/30 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
                   <SkipBack className="w-5 h-5" />
                 </button>
                 <motion.button
                   onClick={togglePlay}
                   whileTap={{ scale: 0.95 }}
-                  className={`w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl transition-all ${
-                    isPlaying ? 'animate-play-pulse' : ''
-                  }`}
-                  style={{ background: 'linear-gradient(135deg, hsl(280, 100%, 60%), hsl(320, 100%, 55%))' }}
+                  className={`w-18 h-18 rounded-full flex items-center justify-center text-primary-foreground ${isPlaying ? 'animate-play-pulse' : ''}`}
+                  style={{ background: 'var(--gradient-primary)', width: '72px', height: '72px' }}
                 >
                   {isPlaying ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
                 </motion.button>
-                <button 
-                  onClick={playNext} 
-                  className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all"
-                >
+                <button onClick={playNext} className="w-11 h-11 rounded-full bg-secondary/30 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
                   <SkipForward className="w-5 h-5" />
                 </button>
-                <button 
-                  onClick={toggleRepeat} 
-                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                    repeat ? 'bg-gradient-cyan text-white shadow-lg shadow-cyan-500/30' : 'bg-white/5 text-muted-foreground hover:text-foreground'
-                  }`}
-                >
+                <button onClick={toggleRepeat} className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${repeat ? 'bg-gradient-ocean text-white glow-blue' : 'bg-secondary/30 text-muted-foreground'}`}>
                   <Repeat className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Extra buttons */}
-              <div className="flex justify-around w-full mt-2 gap-2">
+              {/* Action buttons */}
+              <div className="flex justify-around w-full mt-2 gap-1">
                 {[
-                  { icon: Mic, action: handleLyrics, label: 'Lyrics', gradient: 'from-amber-500 to-orange-500' },
-                  { icon: ListOrdered, action: () => setQueueOpen(true), label: 'Queue', gradient: 'from-green-500 to-emerald-500' },
-                  { icon: Share2, action: handleShare, label: 'Share', gradient: 'from-blue-500 to-cyan-500' },
-                  { icon: Heart, action: () => toggleLike(currentSong), label: 'Like', gradient: 'from-pink-500 to-rose-500', active: liked },
+                  { icon: Mic, action: handleLyrics, label: 'Lyrics', gradient: 'from-amber-400 to-orange-500' },
+                  { icon: ListOrdered, action: () => setQueueOpen(true), label: 'Queue', gradient: 'from-emerald-500 to-teal-400' },
+                  { icon: Share2, action: handleShare, label: 'Share', gradient: 'from-blue-500 to-cyan-400' },
+                  { icon: Heart, action: () => toggleLike(currentSong), label: 'Like', gradient: 'from-pink-500 to-rose-400', active: liked },
+                  { icon: Bell, action: handleRingtone, label: 'Ringtone', gradient: 'from-violet-500 to-purple-400' },
                 ].map(({ icon: Icon, action, label, gradient, active }) => (
-                  <button 
+                  <button
                     key={label}
-                    onClick={action} 
+                    onClick={action}
                     className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
-                      active ? `bg-gradient-to-r ${gradient} text-white` : 'text-muted-foreground hover:text-foreground'
+                      active ? `bg-gradient-to-r ${gradient} text-white shadow-lg` : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${active ? 'fill-current' : ''}`} />
-                    <span className="text-[10px]">{label}</span>
+                    <Icon className={`w-4 h-4 ${active ? 'fill-current' : ''}`} />
+                    <span className="text-[9px] font-bold">{label}</span>
                   </button>
                 ))}
               </div>
 
               {/* Volume */}
-              <div className="flex items-center gap-3 w-full mt-5 bg-white/5 rounded-2xl p-3">
-                <span className="text-lg">🔈</span>
-                <div className="flex-1 relative">
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={volume}
-                    onChange={(e) => setVolume(parseFloat(e.target.value))}
-                    className="w-full h-2 appearance-none rounded-full bg-white/10 cursor-pointer"
-                    style={{
-                      background: `linear-gradient(90deg, hsl(280, 100%, 65%) 0%, hsl(320, 100%, 60%) ${volume * 100}%, rgba(255,255,255,0.1) ${volume * 100}%)`
-                    }}
-                  />
-                </div>
-                <span className="text-lg">🔊</span>
+              <div className="flex items-center gap-3 w-full mt-5 bg-secondary/20 rounded-2xl p-3">
+                <span className="text-sm">🔈</span>
+                <input
+                  type="range" min="0" max="1" step="0.01" value={volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  className="flex-1 h-1.5 appearance-none rounded-full bg-secondary/40 cursor-pointer accent-primary"
+                  style={{
+                    background: `linear-gradient(90deg, hsl(160, 100%, 50%) 0%, hsl(200, 100%, 55%) ${volume * 100}%, hsla(230, 15%, 18%, 0.5) ${volume * 100}%)`
+                  }}
+                />
+                <span className="text-sm">🔊</span>
               </div>
 
               {/* Quality */}
               <div className="mt-4 w-full">
-                <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider text-center mb-2">Quality (kbps)</p>
+                <p className="text-[9px] text-muted-foreground/50 uppercase tracking-wider text-center mb-2 font-bold">Quality (kbps)</p>
                 <div className="flex justify-center gap-2">
-                  {QUALITY_OPTIONS.map(({ value, label, color }) => (
+                  {QUALITY_OPTIONS.map(({ value, label, gradient }) => (
                     <button
                       key={value}
                       onClick={() => setQuality(value)}
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                        preferredQuality === value 
-                          ? `bg-gradient-to-r ${color} text-white shadow-lg` 
-                          : 'bg-white/5 text-muted-foreground hover:bg-white/10'
+                        preferredQuality === value
+                          ? `bg-gradient-to-r ${gradient} text-white shadow-lg`
+                          : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'
                       }`}
                     >
                       {label}
@@ -288,8 +260,7 @@ const ExpandedPlayer = () => {
               <motion.button
                 onClick={handleDownload}
                 whileTap={{ scale: 0.98 }}
-                className="mt-4 w-full py-3 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg, hsl(280, 100%, 60%), hsl(320, 100%, 55%))' }}
+                className="mt-4 w-full py-3 rounded-2xl text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 bg-gradient-primary glow-primary"
               >
                 <Download className="w-4 h-4" /> Download Song
               </motion.button>

@@ -14,7 +14,7 @@ const fetchFnMap: Record<string, (q: string, l: number, p: number) => Promise<an
 
 const TabSearch = ({ type }: { type: string }) => {
   const [params] = useSearchParams();
-  const q = params.get('q') || 'arijit singh hindi';
+  const q = params.get('q') || 'trending hindi songs';
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -50,7 +50,6 @@ const TabSearch = ({ type }: { type: string }) => {
     setLoadingMore(false);
   }, [page, hasMore, loadingMore, type, q]);
 
-  // Infinite scroll
   useEffect(() => {
     if (!sentinelRef.current || !hasMore) return;
     const obs = new IntersectionObserver(
@@ -61,38 +60,25 @@ const TabSearch = ({ type }: { type: string }) => {
     return () => obs.disconnect();
   }, [hasMore, loadMore]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    );
-  }
-
-  if (!results.length) {
-    return <div className="text-center py-16 text-muted-foreground">No results</div>;
-  }
+  if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>;
+  if (!results.length) return <div className="text-center py-16 text-muted-foreground">No results</div>;
 
   return (
     <div className="p-4 pb-40">
-      <h2 className="text-sm font-bold text-foreground mb-3 capitalize">{type}: "{q}"</h2>
-
+      <h2 className="text-sm font-black text-foreground mb-3 capitalize">{type}: "{q}"</h2>
       {type === 'songs' ? (
-        <div className="space-y-2">
-          {results.map((song, i) => (
-            <SongItem key={`${song.id}-${i}`} song={song} songList={results} songIdx={i} />
-          ))}
+        <div className="space-y-1.5">
+          {results.map((song, i) => <SongItem key={`${song.id}-${i}`} song={song} songList={results} songIdx={i} />)}
         </div>
       ) : type === 'artists' ? (
         <div className="flex flex-wrap gap-3">
           {results.map(item => <MusicCard key={item.id} item={item} type="artists" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {results.map(item => <MusicCard key={item.id || item._id} item={item} type={type as any} />)}
         </div>
       )}
-
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-4">
           {loadingMore && <Loader2 className="w-5 h-5 text-primary animate-spin" />}
