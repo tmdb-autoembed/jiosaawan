@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
-import { getAudioUrl, getImg, getArtistStr, getSongById, getUrlForQuality } from '@/lib/api';
+import { getAudioUrl, getImg, getArtistStr, getSongById, getUrlForQuality, getSongSuggestions } from '@/lib/api';
 import { toast } from 'sonner';
 
 interface AudioEffects {
@@ -27,6 +27,7 @@ interface PlayerState {
   expandedOpen: boolean;
   queueOpen: boolean;
   audioEffects: AudioEffects;
+  autoPlay: boolean;
 }
 
 interface PlayerContextType extends PlayerState {
@@ -50,6 +51,7 @@ interface PlayerContextType extends PlayerState {
   setQueueOpen: (v: boolean) => void;
   stopPlayer: () => void;
   setAudioEffects: (effects: AudioEffects) => void;
+  toggleAutoPlay: () => void;
 }
 
 const DEFAULT_EFFECTS: AudioEffects = {
@@ -83,6 +85,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [repeat, setRepeat] = useState(false);
   const [expandedOpen, setExpandedOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(() => {
+    try { return localStorage.getItem('autoPlay') !== 'false'; } catch { return true; }
+  });
   const [audioEffects, setAudioEffectsState] = useState<AudioEffects>(() => {
     try { 
       const saved = localStorage.getItem('audioEffects');
@@ -105,6 +110,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => { localStorage.setItem('savedPlaylists', JSON.stringify(savedPlaylists)); }, [savedPlaylists]);
   useEffect(() => { localStorage.setItem('preferredQuality', preferredQuality); }, [preferredQuality]);
   useEffect(() => { localStorage.setItem('audioEffects', JSON.stringify(audioEffects)); }, [audioEffects]);
+  useEffect(() => { localStorage.setItem('autoPlay', String(autoPlay)); }, [autoPlay]);
 
   // Apply playback rate (speed) when effects change
   useEffect(() => {
@@ -113,6 +119,28 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       audio.playbackRate = audioEffects.speed;
     }
   }, [audioEffects.speed]);
+
+  // Fetch song suggestions and append to queue for infinite playback
+  const fetchAndAppendSuggestions = useCallback(async (songId: string) => {
+    try {
+      const res = await getSongSuggestions(songId, 10);
+      const suggestions = Array.isArray(res?.data) ? res.data : [];
+      if (suggestions.length > 0) {
+        setQueue(prev => {
+          // Filter out duplicates
+          const existingIds = new Set(prev.map((s: any) => s.id));
+          const newSongs = suggestions.filter((s: any) => !existingIds.has(s.id));
+          if (newSongs.length > 0) {
+            toast.info(`♾️ ${newSongs.length} similar songs added to queue`);
+            return [...prev, ...newSongs];
+          }
+          return prev;
+        });
+      }
+    } catch {
+      // silently fail
+    }
+  }, []);
 
   // Audio events
   useEffect(() => {
@@ -150,6 +178,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const playNextInternal = useCallback(() => {
     if (queue.length === 0) return;
+    
+    const isLastSong = queueIdx >= queue.length - 1;
+    
+    // If at end of queue and autoPlay is on, fetch suggestions
+    if (isLastSong && autoPlay && currentSong?.id) {
+      fetchAndAppendSuggestions(currentSong.id);
+    }
+    
     let nextIdx: number;
     if (shuffle) {
       nextIdx = Math.floor(Math.random() * queue.length);
@@ -158,7 +194,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setQueueIdx(nextIdx);
     loadSong(queue[nextIdx]);
-  }, [queue, queueIdx, shuffle]);
+  }, [queue, queueIdx, shuffle, autoPlay, currentSong]);
 
   const loadSong = async (song: any) => {
     const audio = audioRef.current;
@@ -228,12 +264,18 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (audio) { audio.currentTime = 0; audio.play(); }
       return;
     }
+    
+    const isLastSong = queueIdx >= queue.length - 1;
+    if (isLastSong && autoPlay && currentSong?.id) {
+      fetchAndAppendSuggestions(currentSong.id);
+    }
+    
     let nextIdx: number;
     if (shuffle) nextIdx = Math.floor(Math.random() * queue.length);
     else nextIdx = (queueIdx + 1) % queue.length;
     setQueueIdx(nextIdx);
     loadSong(queue[nextIdx]);
-  }, [queue, queueIdx, shuffle, repeat, preferredQuality, audioEffects.speed]);
+  }, [queue, queueIdx, shuffle, repeat, preferredQuality, audioEffects.speed, autoPlay, currentSong]);
 
   const playPrev = useCallback(() => {
     if (queue.length === 0) return;
@@ -304,7 +346,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const setQuality = useCallback((q: string) => {
     setPreferredQuality(q);
     toast.info(`Quality: ${q}`);
-    // If playing, switch URL
     if (currentSong && audioRef.current) {
       const newUrl = getUrlForQuality(currentSong, q);
       if (newUrl) {
@@ -320,6 +361,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const setAudioEffects = useCallback((effects: AudioEffects) => {
     setAudioEffectsState(effects);
+  }, []);
+
+  const toggleAutoPlay = useCallback(() => {
+    setAutoPlay(p => {
+      toast.info(!p ? '♾️ Auto-play on — similar songs will play next' : 'Auto-play off');
+      return !p;
+    });
   }, []);
 
   const stopPlayer = useCallback(() => {
@@ -367,11 +415,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <PlayerContext.Provider value={{
       currentSong, queue, queueIdx, isPlaying, currentTime, duration,
       volume, shuffle, repeat, likedSongs, savedPlaylists, preferredQuality,
-      expandedOpen, queueOpen, audioRef, audioEffects,
+      expandedOpen, queueOpen, audioRef, audioEffects, autoPlay,
       loadAndPlay, playQueue, togglePlay, playNext, playPrev,
       toggleShuffle, toggleRepeat, setVolume, seek, toggleLike, isLiked,
       savePlaylist, unsavePlaylist, isPlaylistSaved, setQuality,
-      setExpandedOpen, setQueueOpen, stopPlayer, setAudioEffects,
+      setExpandedOpen, setQueueOpen, stopPlayer, setAudioEffects, toggleAutoPlay,
     }}>
       {children}
       <audio ref={audioRef} preload="metadata" />

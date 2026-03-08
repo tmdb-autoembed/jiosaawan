@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { getImg, getArtistStr, fmtTime, getUrlForQuality, getAudioUrl, getSongShareLink, getSongRingtone } from '@/lib/api';
-import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Share2, Heart, Download, Sliders, Bell } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Share2, Heart, Download, Sliders, Bell, Infinity as InfinityIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +21,7 @@ const ExpandedPlayer = () => {
     shuffle, toggleShuffle, repeat, toggleRepeat,
     expandedOpen, setExpandedOpen, setQueueOpen,
     toggleLike, isLiked, preferredQuality, setQuality,
+    autoPlay, toggleAutoPlay,
   } = usePlayer();
   const navigate = useNavigate();
   const [showEqualizer, setShowEqualizer] = useState(false);
@@ -207,6 +208,17 @@ const ExpandedPlayer = () => {
                   <Repeat className="w-4.5 h-4.5" />
                 </button>
               </div>
+
+              {/* Auto-play toggle */}
+              <button
+                onClick={toggleAutoPlay}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all mt-2 ${
+                  autoPlay ? 'bg-gradient-primary text-primary-foreground shadow-lg' : 'card-surface text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <InfinityIcon className="w-4 h-4" />
+                Auto-Play {autoPlay ? 'On' : 'Off'}
+              </button>
 
               {/* Actions */}
               <div className="flex justify-around w-full mt-3 gap-1">
