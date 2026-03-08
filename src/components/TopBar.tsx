@@ -43,8 +43,12 @@ const TopBar = () => {
     if (tab.id === 'home' || tab.id === 'profile' || tab.id === 'podcasts') {
       navigate(tab.path);
     } else {
-      const q = query.trim() || 'trending hindi songs';
-      navigate(`/search/${tab.id}?q=${encodeURIComponent(q)}`);
+      const q = query.trim();
+      if (q) {
+        navigate(`/search/${tab.id}?q=${encodeURIComponent(q)}`);
+      } else {
+        navigate(`/search/${tab.id}`);
+      }
     }
   };
 
