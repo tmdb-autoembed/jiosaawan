@@ -2,6 +2,15 @@ import React, { createContext, useContext, useState, useRef, useCallback, useEff
 import { getAudioUrl, getImg, getArtistStr, getSongById, getUrlForQuality } from '@/lib/api';
 import { toast } from 'sonner';
 
+interface AudioEffects {
+  eqBands: number[];
+  bassBoost: number;
+  reverb: number;
+  pitch: number;
+  speed: number;
+  echo: number;
+}
+
 interface PlayerState {
   currentSong: any | null;
   queue: any[];
@@ -17,6 +26,7 @@ interface PlayerState {
   preferredQuality: string;
   expandedOpen: boolean;
   queueOpen: boolean;
+  audioEffects: AudioEffects;
 }
 
 interface PlayerContextType extends PlayerState {
@@ -39,7 +49,17 @@ interface PlayerContextType extends PlayerState {
   setExpandedOpen: (v: boolean) => void;
   setQueueOpen: (v: boolean) => void;
   stopPlayer: () => void;
+  setAudioEffects: (effects: AudioEffects) => void;
 }
+
+const DEFAULT_EFFECTS: AudioEffects = {
+  eqBands: [0, 0, 0, 0, 0, 0],
+  bassBoost: 0,
+  reverb: 0,
+  pitch: 1,
+  speed: 1,
+  echo: 0,
+};
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
 
@@ -63,6 +83,12 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [repeat, setRepeat] = useState(false);
   const [expandedOpen, setExpandedOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [audioEffects, setAudioEffectsState] = useState<AudioEffects>(() => {
+    try { 
+      const saved = localStorage.getItem('audioEffects');
+      return saved ? JSON.parse(saved) : DEFAULT_EFFECTS;
+    } catch { return DEFAULT_EFFECTS; }
+  });
 
   const [likedSongs, setLikedSongs] = useState<any[]>(() => {
     try { return JSON.parse(localStorage.getItem('liked') || '[]'); } catch { return []; }
@@ -78,6 +104,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => { localStorage.setItem('liked', JSON.stringify(likedSongs)); }, [likedSongs]);
   useEffect(() => { localStorage.setItem('savedPlaylists', JSON.stringify(savedPlaylists)); }, [savedPlaylists]);
   useEffect(() => { localStorage.setItem('preferredQuality', preferredQuality); }, [preferredQuality]);
+  useEffect(() => { localStorage.setItem('audioEffects', JSON.stringify(audioEffects)); }, [audioEffects]);
+
+  // Apply playback rate (speed) when effects change
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.playbackRate = audioEffects.speed;
+    }
+  }, [audioEffects.speed]);
 
   // Audio events
   useEffect(() => {
@@ -142,6 +177,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!url) { toast.error('No audio URL found'); return; }
 
       audio.src = url;
+      audio.playbackRate = audioEffects.speed;
       audio.play().catch(() => toast.error('Playback failed'));
 
       // Media Session
@@ -170,13 +206,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setQueueIdx(0);
     }
     await loadSong(song);
-  }, [queue, preferredQuality]);
+  }, [queue, preferredQuality, audioEffects.speed]);
 
   const playQueue = useCallback((songs: any[], idx: number) => {
     setQueue(songs);
     setQueueIdx(idx);
     loadSong(songs[idx]);
-  }, [preferredQuality]);
+  }, [preferredQuality, audioEffects.speed]);
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
@@ -197,7 +233,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     else nextIdx = (queueIdx + 1) % queue.length;
     setQueueIdx(nextIdx);
     loadSong(queue[nextIdx]);
-  }, [queue, queueIdx, shuffle, repeat, preferredQuality]);
+  }, [queue, queueIdx, shuffle, repeat, preferredQuality, audioEffects.speed]);
 
   const playPrev = useCallback(() => {
     if (queue.length === 0) return;
@@ -206,7 +242,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const prevIdx = (queueIdx - 1 + queue.length) % queue.length;
     setQueueIdx(prevIdx);
     loadSong(queue[prevIdx]);
-  }, [queue, queueIdx, preferredQuality]);
+  }, [queue, queueIdx, preferredQuality, audioEffects.speed]);
 
   const toggleShuffle = useCallback(() => {
     setShuffle(p => { toast.info(!p ? 'Shuffle on' : 'Shuffle off'); return !p; });
@@ -276,10 +312,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const wasPlaying = !audioRef.current.paused;
         audioRef.current.src = newUrl;
         audioRef.current.currentTime = pos;
+        audioRef.current.playbackRate = audioEffects.speed;
         if (wasPlaying) audioRef.current.play().catch(() => {});
       }
     }
-  }, [currentSong]);
+  }, [currentSong, audioEffects.speed]);
+
+  const setAudioEffects = useCallback((effects: AudioEffects) => {
+    setAudioEffectsState(effects);
+  }, []);
 
   const stopPlayer = useCallback(() => {
     const audio = audioRef.current;
@@ -326,11 +367,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <PlayerContext.Provider value={{
       currentSong, queue, queueIdx, isPlaying, currentTime, duration,
       volume, shuffle, repeat, likedSongs, savedPlaylists, preferredQuality,
-      expandedOpen, queueOpen, audioRef,
+      expandedOpen, queueOpen, audioRef, audioEffects,
       loadAndPlay, playQueue, togglePlay, playNext, playPrev,
       toggleShuffle, toggleRepeat, setVolume, seek, toggleLike, isLiked,
       savePlaylist, unsavePlaylist, isPlaylistSaved, setQuality,
-      setExpandedOpen, setQueueOpen, stopPlayer,
+      setExpandedOpen, setQueueOpen, stopPlayer, setAudioEffects,
     }}>
       {children}
       <audio ref={audioRef} preload="metadata" />
