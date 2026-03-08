@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   getTrending, getTrendingSongs, getTrendingAlbums,
   getTrendingPlaylists, getTrendingArtists, getTrendingPodcasts,
@@ -6,7 +6,7 @@ import {
 } from '@/lib/api';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
-import { Flame, Disc3, ListMusic, Star, Radio, Sparkles, ChevronRight, ChevronDown, Loader2, Music } from 'lucide-react';
+import { Flame, Disc3, ListMusic, Star, Radio, Sparkles, ChevronRight, Loader2, Music } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -43,7 +43,6 @@ const Index = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [sections, setSections] = useState<Record<string, SectionData>>({});
-  const [songsExpanded, setSongsExpanded] = useState(false);
 
   // Popular songs state
   const [activeFilter, setActiveFilter] = useState(quickFilters[0]);
@@ -52,6 +51,8 @@ const Index = () => {
   const [songsHasMore, setSongsHasMore] = useState(true);
   const [songsLoading, setSongsLoading] = useState(true);
   const [songsLoadingMore, setSongsLoadingMore] = useState(false);
+
+  const songsSentinelRef = useRef<HTMLDivElement>(null);
 
   // Load trending sections
   useEffect(() => {
@@ -79,11 +80,10 @@ const Index = () => {
     setSongsLoading(true);
     setSongs([]);
     setSongsPage(1);
-    setSongsExpanded(false);
     searchSongs(activeFilter.query, 20, 1).then(res => {
       const results = res?.data?.results || [];
       setSongs(results);
-      setSongsHasMore((res?.data?.total || 0) > results.length);
+      setSongsHasMore((res?.data?.total || 0) > results.length || results.length >= 20);
     }).catch(() => {}).finally(() => setSongsLoading(false));
   }, [activeFilter]);
 
@@ -94,13 +94,28 @@ const Index = () => {
       const nextPage = songsPage + 1;
       const res = await searchSongs(activeFilter.query, 20, nextPage);
       const newItems = res?.data?.results || [];
-      setSongs(prev => [...prev, ...newItems]);
-      setSongsPage(nextPage);
-      setSongsHasMore(newItems.length >= 20);
+      if (newItems.length === 0) {
+        setSongsHasMore(false);
+      } else {
+        setSongs(prev => [...prev, ...newItems]);
+        setSongsPage(nextPage);
+        setSongsHasMore(newItems.length >= 20);
+      }
     } catch {} finally {
       setSongsLoadingMore(false);
     }
   }, [songsPage, songsHasMore, songsLoadingMore, activeFilter]);
+
+  // Infinite scroll for songs
+  useEffect(() => {
+    if (!songsSentinelRef.current || !songsHasMore || songsLoading) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) loadMoreSongs(); },
+      { rootMargin: '300px' }
+    );
+    obs.observe(songsSentinelRef.current);
+    return () => obs.disconnect();
+  }, [songsHasMore, loadMoreSongs, songsLoading]);
 
   const loadMore = useCallback(async (key: string) => {
     const section = sections[key];
@@ -195,7 +210,7 @@ const Index = () => {
           ))}
         </div>
 
-        {/* Songs List */}
+        {/* Songs List - Infinite Scroll */}
         {songsLoading ? (
           <div className="flex items-center justify-center py-10">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -205,30 +220,17 @@ const Index = () => {
         ) : (
           <>
             <div className="space-y-2">
-              {(songsExpanded ? songs : songs.slice(0, 6)).map((song: any, i: number) => (
+              {songs.map((song: any, i: number) => (
                 <SongItem key={`${song.id}-${i}`} song={song} songList={songs} songIdx={i} />
               ))}
             </div>
-            <div className="flex gap-2 mt-3">
-              {songs.length > 6 && (
-                <button
-                  onClick={() => setSongsExpanded(p => !p)}
-                  className="flex-1 py-2.5 card-surface rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 hover:bg-primary/5 transition-colors"
-                >
-                  <ChevronDown className={`w-4 h-4 transition-transform ${songsExpanded ? 'rotate-180' : ''}`} />
-                  {songsExpanded ? 'Show Less' : `Show All (${songs.length})`}
-                </button>
-              )}
-              {songsHasMore && (
-                <button
-                  onClick={loadMoreSongs}
-                  disabled={songsLoadingMore}
-                  className="flex-1 py-2.5 btn-3d-primary rounded-2xl text-sm font-bold text-primary-foreground flex items-center justify-center gap-1.5 disabled:opacity-50"
-                >
-                  {songsLoadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More'}
-                </button>
-              )}
-            </div>
+            {songsHasMore ? (
+              <div ref={songsSentinelRef} className="flex justify-center py-4">
+                {songsLoadingMore && <Loader2 className="w-5 h-5 text-primary animate-spin" />}
+              </div>
+            ) : (
+              <p className="text-center text-xs text-muted-foreground/50 py-4 font-medium">— No more results —</p>
+            )}
           </>
         )}
       </motion.section>
@@ -260,39 +262,28 @@ const Index = () => {
             </div>
 
             {key === 'artists' ? (
-              <>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-                  {section.items.map((item: any) => (
-                    <MusicCard key={item.id} item={item} type="artists" />
-                  ))}
-                </div>
-                {section.hasMore && (
-                  <button
-                    onClick={() => loadMore(key)}
-                    disabled={section.loading}
-                    className="w-full mt-2 py-2.5 card-surface rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 hover:bg-primary/5 transition-colors disabled:opacity-50"
-                  >
-                    {section.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More Artists'}
-                  </button>
-                )}
-              </>
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+                {section.items.map((item: any) => (
+                  <MusicCard key={item.id} item={item} type="artists" />
+                ))}
+              </div>
             ) : (
-              <>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x">
-                  {section.items.map((item: any) => (
-                    <MusicCard key={item.id || item._id} item={item} type={key as any} />
-                  ))}
-                </div>
-                {section.hasMore && (
-                  <button
-                    onClick={() => loadMore(key)}
-                    disabled={section.loading}
-                    className="w-full mt-2 py-2.5 card-surface rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 hover:bg-primary/5 transition-colors disabled:opacity-50"
-                  >
-                    {section.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `Load More ${title.split(' ')[1] || ''}`}
-                  </button>
-                )}
-              </>
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x">
+                {section.items.map((item: any) => (
+                  <MusicCard key={item.id || item._id} item={item} type={key as any} />
+                ))}
+              </div>
+            )}
+            {section.hasMore ? (
+              <button
+                onClick={() => loadMore(key)}
+                disabled={section.loading}
+                className="w-full mt-2 py-2.5 card-surface rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 hover:bg-primary/5 transition-colors disabled:opacity-50"
+              >
+                {section.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `Load More ${title.split(' ')[1] || ''}`}
+              </button>
+            ) : section.items.length > 0 && (
+              <p className="text-center text-xs text-muted-foreground/50 py-3 font-medium">— No more results —</p>
             )}
           </motion.section>
         );

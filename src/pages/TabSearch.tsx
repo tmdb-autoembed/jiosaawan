@@ -148,10 +148,12 @@ const TabSearch = ({ type }: { type: string }) => {
           {results.map(item => <MusicCard key={item.id || item._id} item={item} type={type as any} />)}
         </div>
       )}
-      {hasMore && (
+      {hasMore ? (
         <div ref={sentinelRef} className="flex justify-center py-4">
           {loadingMore && <Loader2 className="w-5 h-5 text-primary animate-spin" />}
         </div>
+      ) : results.length > 0 && (
+        <p className="text-center text-xs text-muted-foreground/50 py-3 font-medium">— No more results —</p>
       )}
     </div>
   );

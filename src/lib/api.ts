@@ -39,13 +39,18 @@ export function getUrlForQuality(song: any, quality: string): string {
   return '';
 }
 
+// Decode HTML entities like &quot; &amp; etc.
+export function decodeHtml(str: string): string {
+  if (!str) return '';
+  const txt = document.createElement('textarea');
+  txt.innerHTML = str;
+  return txt.value;
+}
+
 export function getArtistStr(song: any): string {
-  if (song.primaryArtists) return song.primaryArtists;
-  if (song.singers) return song.singers;
-  if (song.artists?.primary) {
-    return song.artists.primary.map((a: any) => a.name).join(', ');
-  }
-  return '';
+  const raw = song.primaryArtists || song.singers ||
+    (song.artists?.primary ? song.artists.primary.map((a: any) => a.name).join(', ') : '');
+  return decodeHtml(raw);
 }
 
 export function fmtTime(s: number): string {
