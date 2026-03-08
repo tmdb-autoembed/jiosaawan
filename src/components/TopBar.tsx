@@ -40,7 +40,7 @@ const TopBar = () => {
   })();
 
   const handleTabClick = (tab: typeof tabs[0]) => {
-    if (tab.id === 'home' || tab.id === 'profile' || tab.id === 'podcasts') {
+    if (tab.id === 'home' || tab.id === 'profile') {
       navigate(tab.path);
     } else {
       const q = query.trim();
