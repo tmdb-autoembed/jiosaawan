@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   getTrending, getTrendingSongs, getTrendingAlbums,
   getTrendingPlaylists, getTrendingArtists, getTrendingPodcasts,
+  searchSongs,
 } from '@/lib/api';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
@@ -16,8 +17,22 @@ interface SectionData {
   loading: boolean;
 }
 
+const quickFilters = [
+  { label: '🔥 Trending', query: 'trending hindi songs' },
+  { label: '🎬 Bollywood', query: 'bollywood hits 2025' },
+  { label: '💕 Romantic', query: 'hindi romantic songs' },
+  { label: '🎤 Arijit Singh', query: 'arijit singh' },
+  { label: '🎵 Punjabi', query: 'punjabi hits' },
+  { label: '😢 Sad Songs', query: 'hindi sad songs' },
+  { label: '💃 Party', query: 'bollywood party songs' },
+  { label: '🕉️ Devotional', query: 'hindi bhajan' },
+  { label: '🎧 Lo-Fi', query: 'hindi lofi' },
+  { label: '🎶 90s Hits', query: '90s bollywood hits' },
+  { label: '🆕 New Releases', query: 'new hindi songs 2025' },
+  { label: '🎼 Ghazals', query: 'best ghazals hindi' },
+];
+
 const sectionConfig = [
-  { key: 'songs', title: 'Trending Songs', icon: Flame, gradient: 'from-orange-500 to-rose-500', fetchFn: getTrendingSongs },
   { key: 'albums', title: 'Hot Albums', icon: Disc3, gradient: 'from-violet-500 to-indigo-500', fetchFn: getTrendingAlbums },
   { key: 'playlists', title: 'Popular Playlists', icon: ListMusic, gradient: 'from-sky-500 to-blue-600', fetchFn: getTrendingPlaylists },
   { key: 'artists', title: 'Top Artists', icon: Star, gradient: 'from-amber-400 to-orange-500', fetchFn: getTrendingArtists },
@@ -30,6 +45,15 @@ const Index = () => {
   const [sections, setSections] = useState<Record<string, SectionData>>({});
   const [songsExpanded, setSongsExpanded] = useState(false);
 
+  // Popular songs state
+  const [activeFilter, setActiveFilter] = useState(quickFilters[0]);
+  const [songs, setSongs] = useState<any[]>([]);
+  const [songsPage, setSongsPage] = useState(1);
+  const [songsHasMore, setSongsHasMore] = useState(true);
+  const [songsLoading, setSongsLoading] = useState(true);
+  const [songsLoadingMore, setSongsLoadingMore] = useState(false);
+
+  // Load trending sections
   useEffect(() => {
     setLoading(true);
     getTrending(1, 20).then(res => {
@@ -49,6 +73,34 @@ const Index = () => {
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
+
+  // Load songs when filter changes
+  useEffect(() => {
+    setSongsLoading(true);
+    setSongs([]);
+    setSongsPage(1);
+    setSongsExpanded(false);
+    searchSongs(activeFilter.query, 20, 1).then(res => {
+      const results = res?.data?.results || [];
+      setSongs(results);
+      setSongsHasMore((res?.data?.total || 0) > results.length);
+    }).catch(() => {}).finally(() => setSongsLoading(false));
+  }, [activeFilter]);
+
+  const loadMoreSongs = useCallback(async () => {
+    if (songsLoadingMore || !songsHasMore) return;
+    setSongsLoadingMore(true);
+    try {
+      const nextPage = songsPage + 1;
+      const res = await searchSongs(activeFilter.query, 20, nextPage);
+      const newItems = res?.data?.results || [];
+      setSongs(prev => [...prev, ...newItems]);
+      setSongsPage(nextPage);
+      setSongsHasMore(newItems.length >= 20);
+    } catch {} finally {
+      setSongsLoadingMore(false);
+    }
+  }, [songsPage, songsHasMore, songsLoadingMore, activeFilter]);
 
   const loadMore = useCallback(async (key: string) => {
     const section = sections[key];
@@ -113,7 +165,75 @@ const Index = () => {
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-accent/10 to-transparent rounded-full blur-3xl" />
       </motion.div>
 
-      {/* Sections */}
+      {/* Popular Songs with Quick Filters */}
+      <motion.section
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center shadow-lg">
+            <Flame className="w-4 h-4 text-white" />
+          </div>
+          <h2 className="text-base font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Popular Songs</h2>
+        </div>
+
+        {/* Filter Buttons */}
+        <div className="flex gap-2 flex-wrap mb-4">
+          {quickFilters.map((f) => (
+            <button
+              key={f.query}
+              onClick={() => setActiveFilter(f)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
+                activeFilter.query === f.query
+                  ? 'bg-gradient-primary text-primary-foreground shadow-lg glow-primary scale-105'
+                  : 'card-surface text-muted-foreground hover:text-foreground hover:bg-secondary/70'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Songs List */}
+        {songsLoading ? (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : songs.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No songs found</p>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {(songsExpanded ? songs : songs.slice(0, 6)).map((song: any, i: number) => (
+                <SongItem key={`${song.id}-${i}`} song={song} songList={songs} songIdx={i} />
+              ))}
+            </div>
+            <div className="flex gap-2 mt-3">
+              {songs.length > 6 && (
+                <button
+                  onClick={() => setSongsExpanded(p => !p)}
+                  className="flex-1 py-2.5 card-surface rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 hover:bg-primary/5 transition-colors"
+                >
+                  <ChevronDown className={`w-4 h-4 transition-transform ${songsExpanded ? 'rotate-180' : ''}`} />
+                  {songsExpanded ? 'Show Less' : `Show All (${songs.length})`}
+                </button>
+              )}
+              {songsHasMore && (
+                <button
+                  onClick={loadMoreSongs}
+                  disabled={songsLoadingMore}
+                  className="flex-1 py-2.5 bg-gradient-primary rounded-2xl text-sm font-bold text-primary-foreground flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {songsLoadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More'}
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </motion.section>
+
+      {/* Other Sections */}
       {sectionConfig.map(({ key, title, icon: Icon, gradient }, sIdx) => {
         const section = sections[key];
         if (!section || !section.items.length) return null;
@@ -123,7 +243,7 @@ const Index = () => {
             key={key}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 + sIdx * 0.06 }}
+            transition={{ delay: 0.2 + sIdx * 0.06 }}
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
@@ -139,35 +259,7 @@ const Index = () => {
               )}
             </div>
 
-            {key === 'songs' ? (
-              <>
-                <div className="space-y-2">
-                  {(songsExpanded ? section.items : section.items.slice(0, 6)).map((song: any, i: number) => (
-                    <SongItem key={`${song.id}-${i}`} song={song} songList={section.items} songIdx={i} />
-                  ))}
-                </div>
-                <div className="flex gap-2 mt-3">
-                  {section.items.length > 6 && (
-                    <button
-                      onClick={() => setSongsExpanded(p => !p)}
-                      className="flex-1 py-2.5 card-surface rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 hover:bg-primary/5 transition-colors"
-                    >
-                      <ChevronDown className={`w-4 h-4 transition-transform ${songsExpanded ? 'rotate-180' : ''}`} />
-                      {songsExpanded ? 'Show Less' : `Show All (${section.items.length})`}
-                    </button>
-                  )}
-                  {section.hasMore && (
-                    <button
-                      onClick={() => loadMore(key)}
-                      disabled={section.loading}
-                      className="flex-1 py-2.5 bg-gradient-primary rounded-2xl text-sm font-bold text-primary-foreground flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity disabled:opacity-50"
-                    >
-                      {section.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More'}
-                    </button>
-                  )}
-                </div>
-              </>
-            ) : key === 'artists' ? (
+            {key === 'artists' ? (
               <>
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                   {section.items.map((item: any) => (
