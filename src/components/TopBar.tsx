@@ -8,7 +8,7 @@ const tabs = [
   { id: 'albums', label: 'Albums', icon: Disc3, path: '/search/albums' },
   { id: 'artists', label: 'Artists', icon: Star, path: '/search/artists' },
   { id: 'playlists', label: 'Playlists', icon: ListMusic, path: '/search/playlists' },
-  { id: 'podcasts', label: 'Podcasts', icon: Radio, path: '/podcasts' },
+  { id: 'podcasts', label: 'Podcasts', icon: Radio, path: '/search/podcasts' },
   { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
 
@@ -31,7 +31,7 @@ const TopBar = () => {
     const p = location.pathname;
     if (p === '/') return 'home';
     if (p === '/profile') return 'profile';
-    if (p.startsWith('/podcasts')) return 'podcasts';
+    if (p.startsWith('/search/podcasts')) return 'podcasts';
     if (p.startsWith('/search/songs')) return 'songs';
     if (p.startsWith('/search/albums')) return 'albums';
     if (p.startsWith('/search/artists')) return 'artists';
@@ -40,7 +40,7 @@ const TopBar = () => {
   })();
 
   const handleTabClick = (tab: typeof tabs[0]) => {
-    if (tab.id === 'home' || tab.id === 'profile' || tab.id === 'podcasts') {
+    if (tab.id === 'home' || tab.id === 'profile') {
       navigate(tab.path);
     } else {
       const q = query.trim();
