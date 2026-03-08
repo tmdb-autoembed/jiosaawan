@@ -8,7 +8,7 @@ const tabs = [
   { id: 'albums', label: 'Albums', icon: Disc3, path: '/search/albums' },
   { id: 'artists', label: 'Artists', icon: Star, path: '/search/artists' },
   { id: 'playlists', label: 'Playlists', icon: ListMusic, path: '/search/playlists' },
-  { id: 'podcasts', label: 'Podcasts', icon: Radio, path: '/podcasts' },
+  { id: 'podcasts', label: 'Podcasts', icon: Radio, path: '/search/podcasts' },
   { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
 
