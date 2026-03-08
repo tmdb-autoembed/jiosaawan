@@ -21,6 +21,7 @@ const ExpandedPlayer = () => {
     shuffle, toggleShuffle, repeat, toggleRepeat,
     expandedOpen, setExpandedOpen, setQueueOpen,
     toggleLike, isLiked, preferredQuality, setQuality,
+    autoPlay, toggleAutoPlay,
   } = usePlayer();
   const navigate = useNavigate();
   const [showEqualizer, setShowEqualizer] = useState(false);
