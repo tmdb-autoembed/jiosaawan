@@ -57,7 +57,7 @@ const TopBar = () => {
       {/* Logo */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg glow-primary">
+          <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center btn-3d">
             <Headphones className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
@@ -67,7 +67,7 @@ const TopBar = () => {
       </div>
 
       {/* Search */}
-      <div className="flex items-center bg-secondary/50 border border-border/30 rounded-2xl overflow-hidden focus-within:border-primary/40 focus-within:shadow-[0_0_0_2px_hsla(25,100%,60%,0.1)] transition-all">
+      <div className="flex items-center btn-3d-glass rounded-2xl overflow-hidden focus-within:border-primary/40 focus-within:shadow-[0_0_0_2px_hsla(25,100%,60%,0.15)]">
         <Search className="w-4 h-4 text-muted-foreground ml-3.5 flex-shrink-0" />
         <input
           type="text"
@@ -92,8 +92,8 @@ const TopBar = () => {
             onClick={() => handleTabClick(tab)}
             className={`rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all duration-200 ${
               activeTab === tab.id
-                ? 'bg-gradient-primary text-primary-foreground shadow-lg glow-primary'
-                : 'bg-secondary/40 text-muted-foreground hover:text-foreground hover:bg-secondary/70'
+                ? 'btn-3d-primary text-primary-foreground'
+                : 'btn-3d-glass text-muted-foreground hover:text-foreground'
             }`}
           >
             <tab.icon className="w-3.5 h-3.5" />

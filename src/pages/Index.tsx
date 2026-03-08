@@ -184,10 +184,10 @@ const Index = () => {
             <button
               key={f.query}
               onClick={() => setActiveFilter(f)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap ${
                 activeFilter.query === f.query
-                  ? 'bg-gradient-primary text-primary-foreground shadow-lg glow-primary scale-105'
-                  : 'card-surface text-muted-foreground hover:text-foreground hover:bg-secondary/70'
+                  ? 'btn-3d-primary text-primary-foreground'
+                  : 'btn-3d-glass text-muted-foreground hover:text-foreground'
               }`}
             >
               {f.label}
@@ -223,7 +223,7 @@ const Index = () => {
                 <button
                   onClick={loadMoreSongs}
                   disabled={songsLoadingMore}
-                  className="flex-1 py-2.5 bg-gradient-primary rounded-2xl text-sm font-bold text-primary-foreground flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="flex-1 py-2.5 btn-3d-primary rounded-2xl text-sm font-bold text-primary-foreground flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {songsLoadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More'}
                 </button>
