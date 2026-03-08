@@ -65,7 +65,6 @@ export function extractBioText(bioArr: any): string {
     .join('\n\n');
 }
 
-// Extract results from various API response shapes
 export function extractResults(data: any): any[] {
   if (!data?.data) return [];
   if (Array.isArray(data.data)) return data.data;
@@ -74,51 +73,97 @@ export function extractResults(data: any): any[] {
   return [];
 }
 
-// ---- API endpoints ----
-
+// ---- Search endpoints ----
 export async function searchSongs(query: string, limit = 20, page = 1) {
   return fetchJson(`${API}/search/songs?query=${encodeURIComponent(query)}&limit=${limit}&page=${page}`);
 }
-
 export async function searchAlbums(query: string, limit = 20, page = 1) {
   return fetchJson(`${API}/search/albums?query=${encodeURIComponent(query)}&limit=${limit}&page=${page}`);
 }
-
 export async function searchArtists(query: string, limit = 20, page = 1) {
   return fetchJson(`${API}/search/artists?query=${encodeURIComponent(query)}&limit=${limit}&page=${page}`);
 }
-
 export async function searchPlaylists(query: string, limit = 20, page = 1) {
   return fetchJson(`${API}/search/playlists?query=${encodeURIComponent(query)}&limit=${limit}&page=${page}`);
 }
 
+// ---- Detail endpoints ----
 export async function getAlbumById(id: string) {
   return fetchJson(`${API}/albums?id=${id}`);
 }
-
 export async function getArtistById(id: string) {
   return fetchJson(`${API}/artists/${id}`);
 }
-
 export async function getArtistSongs(id: string, page = 1, limit = 20) {
   return fetchJson(`${API}/artists/${id}/songs?page=${page}&limit=${limit}`);
 }
-
 export async function getArtistAlbums(id: string, page = 1, limit = 20) {
   return fetchJson(`${API}/artists/${id}/albums?page=${page}&limit=${limit}`);
 }
-
 export async function getPlaylistById(id: string) {
   return fetchJson(`${API}/playlists?id=${id}`);
 }
-
 export async function getSongById(id: string) {
   return fetchJson(`${API}/songs/${id}`);
 }
 
+// ---- Lyrics ----
 export async function getLyrics(song: any) {
   const url = song.lyricsId
     ? `${API}/lyrics/${encodeURIComponent(song.lyricsId)}`
     : `${API}/lyrics?query=${encodeURIComponent(song.name || song.title || '')}`;
   return fetchJson(url);
+}
+
+// ---- NEW: Synced Lyrics ----
+export async function getSyncedLyrics(songId: string) {
+  return fetchJson(`${API}/lyrics/${songId}/sync`);
+}
+
+// ---- NEW: Trending ----
+export async function getTrending(page = 1, limit = 20) {
+  return fetchJson(`${API}/trending?page=${page}&limit=${limit}`);
+}
+export async function getTrendingSongs(page = 1, limit = 20) {
+  return fetchJson(`${API}/trending/songs?page=${page}&limit=${limit}`);
+}
+export async function getTrendingAlbums(page = 1, limit = 20) {
+  return fetchJson(`${API}/trending/albums?page=${page}&limit=${limit}`);
+}
+export async function getTrendingPlaylists(page = 1, limit = 20) {
+  return fetchJson(`${API}/trending/playlists?page=${page}&limit=${limit}`);
+}
+export async function getTrendingArtists(page = 1, limit = 20) {
+  return fetchJson(`${API}/trending/artists?page=${page}&limit=${limit}`);
+}
+export async function getTrendingPodcasts(page = 1, limit = 20) {
+  return fetchJson(`${API}/trending/podcasts?page=${page}&limit=${limit}`);
+}
+
+// ---- NEW: Podcasts ----
+export async function getPodcastById(id: string, page = 1, limit = 20) {
+  return fetchJson(`${API}/podcasts/${id}?page=${page}&limit=${limit}`);
+}
+export async function searchPodcasts(query: string, page = 1, limit = 20) {
+  return fetchJson(`${API}/podcasts?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+}
+
+// ---- NEW: Related Artists ----
+export async function getRelatedArtists(id: string, page = 1, limit = 20) {
+  return fetchJson(`${API}/artists/${id}/related?page=${page}&limit=${limit}`);
+}
+
+// ---- NEW: Song Suggestions ----
+export async function getSongSuggestions(id: string, limit = 10) {
+  return fetchJson(`${API}/songs/${id}/suggestions?limit=${limit}`);
+}
+
+// ---- NEW: Ringtone ----
+export async function getSongRingtone(id: string) {
+  return fetchJson(`${API}/songs/${id}/ringtone`);
+}
+
+// ---- NEW: Shareable Link ----
+export async function getSongShareLink(id: string) {
+  return fetchJson(`${API}/songs/${id}/share`);
 }
