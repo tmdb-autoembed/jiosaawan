@@ -1,6 +1,6 @@
 import { usePlayer } from '@/contexts/PlayerContext';
 import SongItem from './SongItem';
-import { X } from 'lucide-react';
+import { X, ListMusic } from 'lucide-react';
 
 const QueuePanel = () => {
   const { queue, queueOpen, setQueueOpen } = usePlayer();
@@ -8,13 +8,19 @@ const QueuePanel = () => {
   if (!queueOpen) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[400] max-w-[600px] mx-auto glass rounded-t-2xl max-h-[80vh] overflow-y-auto border-t border-border/30"
+    <div
+      className="fixed bottom-0 left-0 right-0 z-[400] max-w-[600px] mx-auto glass rounded-t-3xl max-h-[80vh] overflow-y-auto border-t border-primary/20"
       style={{ animation: 'slideUp 0.35s cubic-bezier(0.4,0,0.2,1)', paddingBottom: '120px' }}
     >
-      <div className="sticky top-0 glass px-4 py-3 flex items-center justify-between border-b border-border/20">
-        <span className="font-bold text-foreground text-sm">🎵 Queue ({queue.length})</span>
-        <button onClick={() => setQueueOpen(false)} className="text-muted-foreground hover:text-foreground">
-          <X className="w-5 h-5" />
+      <div className="sticky top-0 glass-vibrant px-4 py-3.5 flex items-center justify-between border-b border-border/20 rounded-t-3xl">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+            <ListMusic className="w-4 h-4 text-primary-foreground" />
+          </div>
+          <span className="font-bold text-foreground text-sm">Queue ({queue.length})</span>
+        </div>
+        <button onClick={() => setQueueOpen(false)} className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center text-muted-foreground hover:text-foreground">
+          <X className="w-4 h-4" />
         </button>
       </div>
       <div className="p-3 space-y-2">

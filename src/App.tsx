@@ -14,6 +14,8 @@ import AlbumDetail from "./pages/AlbumDetail";
 import ArtistDetail from "./pages/ArtistDetail";
 import PlaylistDetail from "./pages/PlaylistDetail";
 import LyricsPage from "./pages/LyricsPage";
+import PodcastsPage from "./pages/PodcastsPage";
+import PodcastDetail from "./pages/PodcastDetail";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +40,8 @@ const App = () => (
                 <Route path="/album/:id" element={<AlbumDetail />} />
                 <Route path="/artist/:id" element={<ArtistDetail />} />
                 <Route path="/playlist/:id" element={<PlaylistDetail />} />
+                <Route path="/podcasts" element={<PodcastsPage />} />
+                <Route path="/podcast/:id" element={<PodcastDetail />} />
                 <Route path="/lyrics" element={<LyricsPage />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="*" element={<NotFound />} />
