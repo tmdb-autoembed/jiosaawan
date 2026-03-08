@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   searchSongs, searchAlbums, searchArtists, searchPlaylists, searchPodcasts,
-  getTrendingSongs, getTrendingAlbums, getTrendingArtists, getTrendingPlaylists, getTrendingPodcasts,
+  getTrending, getTrendingPlaylists, getTrendingPodcasts,
   extractResults,
 } from '@/lib/api';
 import SongItem from '@/components/SongItem';
@@ -17,20 +17,23 @@ const fetchFnMap: Record<string, (q: string, l: number, p: number) => Promise<an
   podcasts: searchPodcasts as any,
 };
 
-const trendingFnMap: Record<string, (p: number, l: number) => Promise<any>> = {
-  songs: getTrendingSongs,
-  albums: getTrendingAlbums,
-  artists: getTrendingArtists,
-  playlists: getTrendingPlaylists,
-  podcasts: getTrendingPodcasts,
-};
-
 const sectionMeta: Record<string, { icon: any; label: string; emoji: string }> = {
   songs: { icon: Flame, label: 'Popular Songs', emoji: '🔥' },
   albums: { icon: Disc3, label: 'Trending Albums', emoji: '💿' },
   artists: { icon: Star, label: 'Top Artists', emoji: '⭐' },
   playlists: { icon: ListMusic, label: 'Popular Playlists', emoji: '🎵' },
   podcasts: { icon: Radio, label: 'Trending Podcasts', emoji: '🎙️' },
+};
+
+// Which trending endpoints support pagination
+// albums: none, artists: none, playlists: page only, podcasts: page+limit
+// songs: use /trending endpoint which has songs in it
+const trendingCanPaginate: Record<string, boolean> = {
+  songs: true,
+  albums: false,
+  artists: false,
+  playlists: true,
+  podcasts: true,
 };
 
 const TabSearch = ({ type }: { type: string }) => {
@@ -42,7 +45,6 @@ const TabSearch = ({ type }: { type: string }) => {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setResults([]);
@@ -61,14 +63,20 @@ const TabSearch = ({ type }: { type: string }) => {
         setHasMore(r.length >= 20);
       }).catch(() => {}).finally(() => setLoading(false));
     } else {
-      // Trending/popular mode
+      // Trending mode - use /trending endpoint for initial load
       setIsTrending(true);
-      const trendFn = trendingFnMap[type];
-      if (!trendFn) { setLoading(false); return; }
-      trendFn(1, 30).then(data => {
-        const r = data?.data?.results || [];
+      getTrending(1, 30).then(data => {
+        let r: any[] = [];
+        if (data?.data) {
+          if (type === 'songs') {
+            // songs come from data.songs or search
+            r = data.data.songs?.results || data.data.trending?.results || [];
+          } else {
+            r = data.data[type]?.results || [];
+          }
+        }
         setResults(r);
-        setHasMore(data?.data?.hasMore ?? r.length >= 30);
+        setHasMore(trendingCanPaginate[type] ? (r.length >= 20) : false);
       }).catch(() => {}).finally(() => setLoading(false));
     }
   }, [type, q]);
@@ -79,13 +87,25 @@ const TabSearch = ({ type }: { type: string }) => {
     const nextPage = page + 1;
     try {
       if (isTrending) {
-        const trendFn = trendingFnMap[type];
-        if (trendFn) {
-          const data = await trendFn(nextPage, 30);
-          const r = data?.data?.results || [];
+        // Only playlists and podcasts support trending pagination
+        let res: any;
+        if (type === 'playlists') {
+          res = await getTrendingPlaylists(nextPage);
+        } else if (type === 'podcasts') {
+          res = await getTrendingPodcasts(nextPage, 30);
+        } else {
+          // songs search pagination, albums/artists don't paginate
+          setHasMore(false);
+          setLoadingMore(false);
+          return;
+        }
+        const r = res?.data?.results || [];
+        if (r.length === 0) {
+          setHasMore(false);
+        } else {
           setResults(prev => [...prev, ...r]);
           setPage(nextPage);
-          setHasMore(data?.data?.hasMore ?? r.length >= 30);
+          setHasMore(res?.data?.hasMore ?? r.length >= 20);
         }
       } else {
         const data = await fetchFnMap[type](q, 20, nextPage);
@@ -97,16 +117,6 @@ const TabSearch = ({ type }: { type: string }) => {
     } catch {}
     setLoadingMore(false);
   }, [page, hasMore, loadingMore, type, q, isTrending]);
-
-  useEffect(() => {
-    if (!sentinelRef.current || !hasMore) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) loadMore(); },
-      { rootMargin: '250px' }
-    );
-    obs.observe(sentinelRef.current);
-    return () => obs.disconnect();
-  }, [hasMore, loadMore]);
 
   const meta = sectionMeta[type] || sectionMeta.songs;
 
@@ -136,22 +146,23 @@ const TabSearch = ({ type }: { type: string }) => {
           {results.map((song, i) => <SongItem key={`${song.id}-${i}`} song={song} songList={results} songIdx={i} />)}
         </div>
       ) : type === 'artists' ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 justify-items-center">
           {results.map(item => <MusicCard key={item.id} item={item} type="artists" />)}
         </div>
-      ) : type === 'podcasts' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {results.map(item => <MusicCard key={item.id || item._id} item={item} type="podcasts" />)}
-        </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 justify-items-center">
           {results.map(item => <MusicCard key={item.id || item._id} item={item} type={type as any} />)}
         </div>
       )}
+
       {hasMore ? (
-        <div ref={sentinelRef} className="flex justify-center py-4">
-          {loadingMore && <Loader2 className="w-5 h-5 text-primary animate-spin" />}
-        </div>
+        <button
+          onClick={loadMore}
+          disabled={loadingMore}
+          className="w-full mt-3 py-2.5 btn-3d-glass rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 disabled:opacity-50"
+        >
+          {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : `Load More`}
+        </button>
       ) : results.length > 0 && (
         <p className="text-center text-xs text-muted-foreground/50 py-3 font-medium">— No more results —</p>
       )}
