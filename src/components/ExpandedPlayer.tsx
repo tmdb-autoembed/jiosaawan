@@ -209,6 +209,17 @@ const ExpandedPlayer = () => {
                 </button>
               </div>
 
+              {/* Auto-play toggle */}
+              <button
+                onClick={toggleAutoPlay}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all mt-2 ${
+                  autoPlay ? 'bg-gradient-primary text-primary-foreground shadow-lg' : 'card-surface text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <InfinityIcon className="w-4 h-4" />
+                Auto-Play {autoPlay ? 'On' : 'Off'}
+              </button>
+
               {/* Actions */}
               <div className="flex justify-around w-full mt-3 gap-1">
                 {actions.map(({ icon: Icon, action, label, active }) => (
