@@ -1,19 +1,20 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  searchSongs, searchAlbums, searchArtists, searchPlaylists,
-  getTrendingSongs, getTrendingAlbums, getTrendingArtists, getTrendingPlaylists,
+  searchSongs, searchAlbums, searchArtists, searchPlaylists, searchPodcasts,
+  getTrendingSongs, getTrendingAlbums, getTrendingArtists, getTrendingPlaylists, getTrendingPodcasts,
   extractResults,
 } from '@/lib/api';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
-import { Loader2, Flame, Disc3, Star, ListMusic } from 'lucide-react';
+import { Loader2, Flame, Disc3, Star, ListMusic, Radio } from 'lucide-react';
 
 const fetchFnMap: Record<string, (q: string, l: number, p: number) => Promise<any>> = {
   songs: searchSongs,
   albums: searchAlbums,
   artists: searchArtists,
   playlists: searchPlaylists,
+  podcasts: searchPodcasts as any,
 };
 
 const trendingFnMap: Record<string, (p: number, l: number) => Promise<any>> = {
@@ -21,6 +22,7 @@ const trendingFnMap: Record<string, (p: number, l: number) => Promise<any>> = {
   albums: getTrendingAlbums,
   artists: getTrendingArtists,
   playlists: getTrendingPlaylists,
+  podcasts: getTrendingPodcasts,
 };
 
 const sectionMeta: Record<string, { icon: any; label: string; emoji: string }> = {
@@ -28,6 +30,7 @@ const sectionMeta: Record<string, { icon: any; label: string; emoji: string }> =
   albums: { icon: Disc3, label: 'Trending Albums', emoji: '💿' },
   artists: { icon: Star, label: 'Top Artists', emoji: '⭐' },
   playlists: { icon: ListMusic, label: 'Popular Playlists', emoji: '🎵' },
+  podcasts: { icon: Radio, label: 'Trending Podcasts', emoji: '🎙️' },
 };
 
 const TabSearch = ({ type }: { type: string }) => {
