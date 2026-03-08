@@ -35,37 +35,42 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
   return (
     <div
       onClick={handleClick}
-      className={`flex items-center gap-3 p-2.5 rounded-2xl card-surface cursor-pointer transition-all duration-200 hover:translate-x-0.5 active:scale-[0.98] ${
-        isActive ? 'ring-1 ring-primary/40 shadow-md shadow-primary/10' : ''
+      className={`group flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-secondary/40 active:scale-[0.98] ${
+        isActive
+          ? 'card-surface-warm ring-1 ring-primary/30 shadow-md shadow-primary/5'
+          : 'card-surface hover:translate-x-0.5'
       }`}
     >
-      {imgUrl ? (
-        <img
-          src={imgUrl}
-          alt={song.name || ''}
-          loading="lazy"
-          className={`w-[50px] h-[50px] rounded-xl object-cover flex-shrink-0 ${isActive ? 'ring-2 ring-primary/50' : ''}`}
-          onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
-        />
-      ) : (
-        <div className="w-[50px] h-[50px] rounded-xl bg-secondary flex-shrink-0" />
-      )}
+      <div className="relative flex-shrink-0">
+        {imgUrl ? (
+          <img
+            src={imgUrl}
+            alt={song.name || ''}
+            loading="lazy"
+            className={`w-12 h-12 rounded-xl object-cover ${isActive ? 'ring-2 ring-primary/40' : ''}`}
+            onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-xl bg-secondary flex-shrink-0" />
+        )}
+        {isActive && isPlaying && (
+          <div className="absolute inset-0 rounded-xl bg-black/30 flex items-center justify-center">
+            <WaveBars />
+          </div>
+        )}
+      </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-bold truncate ${isActive ? 'text-primary' : 'text-foreground'}`}>
+        <p className={`text-sm font-semibold truncate ${isActive ? 'text-primary' : 'text-foreground'}`}>
           {song.name || song.title || 'Unknown'}
         </p>
         <p className="text-xs text-muted-foreground truncate mt-0.5">{artist}</p>
         {showMeta && metaParts.length > 0 && (
-          <p className="text-[10px] text-muted-foreground/50 truncate mt-0.5">{metaParts.join(' • ')}</p>
+          <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">{metaParts.join(' · ')}</p>
         )}
       </div>
 
-      {isActive && isPlaying ? (
-        <WaveBars />
-      ) : (
-        <span className="text-xs text-muted-foreground flex-shrink-0 pl-2">{dur}</span>
-      )}
+      <span className="text-xs text-muted-foreground/60 flex-shrink-0 pl-2 tabular-nums">{dur}</span>
     </div>
   );
 };
