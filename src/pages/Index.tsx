@@ -1,7 +1,6 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
-  getTrending, getTrendingPlaylists, getTrendingPodcasts,
-  searchSongs,
+  getTrending, getTrendingPlaylists, getTrendingPodcasts, getTrendingArtists,
 } from '@/lib/api';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
@@ -16,27 +15,12 @@ interface SectionData {
   loading: boolean;
 }
 
-const quickFilters = [
-  { label: '🔥 Trending', query: 'trending hindi songs' },
-  { label: '🎬 Bollywood', query: 'bollywood hits 2025' },
-  { label: '💕 Romantic', query: 'hindi romantic songs' },
-  { label: '🎤 Arijit Singh', query: 'arijit singh' },
-  { label: '🎵 Punjabi', query: 'punjabi hits' },
-  { label: '😢 Sad Songs', query: 'hindi sad songs' },
-  { label: '💃 Party', query: 'bollywood party songs' },
-  { label: '🕉️ Devotional', query: 'hindi bhajan' },
-  { label: '🎧 Lo-Fi', query: 'hindi lofi' },
-  { label: '🎶 90s Hits', query: '90s bollywood hits' },
-  { label: '🆕 New Releases', query: 'new hindi songs 2025' },
-  { label: '🎼 Ghazals', query: 'best ghazals hindi' },
-];
-
 // pagination config per section
-// albums: no pagination, artists: no pagination, playlists: page only, podcasts: page+limit
+// albums: NO pagination, artists: page only, playlists: page only, podcasts: page+limit
 const sectionConfig = [
   { key: 'albums', title: 'Hot Albums', icon: Disc3, gradient: 'from-violet-500 to-indigo-500', canPaginate: false },
   { key: 'playlists', title: 'Popular Playlists', icon: ListMusic, gradient: 'from-sky-500 to-blue-600', canPaginate: true },
-  { key: 'artists', title: 'Top Artists', icon: Star, gradient: 'from-amber-400 to-orange-500', canPaginate: false },
+  { key: 'artists', title: 'Top Artists', icon: Star, gradient: 'from-amber-400 to-orange-500', canPaginate: true },
   { key: 'podcasts', title: 'Trending Podcasts', icon: Radio, gradient: 'from-pink-500 to-fuchsia-500', canPaginate: true },
 ];
 
@@ -45,19 +29,25 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [sections, setSections] = useState<Record<string, SectionData>>({});
 
-  // Popular songs state
-  const [activeFilter, setActiveFilter] = useState(quickFilters[0]);
+  // Songs from trending
   const [songs, setSongs] = useState<any[]>([]);
   const [songsPage, setSongsPage] = useState(1);
   const [songsHasMore, setSongsHasMore] = useState(true);
   const [songsLoading, setSongsLoading] = useState(true);
   const [songsLoadingMore, setSongsLoadingMore] = useState(false);
 
-  // Load trending sections
+  // Load trending sections + songs
   useEffect(() => {
     setLoading(true);
+    setSongsLoading(true);
     getTrending(1, 20).then(res => {
       if (res?.data) {
+        // Songs from trending
+        const trendingSongs = res.data.songs?.results || [];
+        setSongs(trendingSongs);
+        setSongsHasMore(res.data.songs?.hasMore ?? trendingSongs.length >= 20);
+        setSongsLoading(false);
+
         const data: Record<string, SectionData> = {};
         for (const { key, canPaginate } of sectionConfig) {
           const sectionData = res.data[key];
@@ -74,36 +64,24 @@ const Index = () => {
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  // Load songs when filter changes
-  useEffect(() => {
-    setSongsLoading(true);
-    setSongs([]);
-    setSongsPage(1);
-    searchSongs(activeFilter.query, 20, 1).then(res => {
-      const results = res?.data?.results || [];
-      setSongs(results);
-      setSongsHasMore((res?.data?.total || 0) > results.length || results.length >= 20);
-    }).catch(() => {}).finally(() => setSongsLoading(false));
-  }, [activeFilter]);
-
   const loadMoreSongs = useCallback(async () => {
     if (songsLoadingMore || !songsHasMore) return;
     setSongsLoadingMore(true);
     try {
       const nextPage = songsPage + 1;
-      const res = await searchSongs(activeFilter.query, 20, nextPage);
-      const newItems = res?.data?.results || [];
+      const res = await getTrending(nextPage, 20);
+      const newItems = res?.data?.songs?.results || [];
       if (newItems.length === 0) {
         setSongsHasMore(false);
       } else {
         setSongs(prev => [...prev, ...newItems]);
         setSongsPage(nextPage);
-        setSongsHasMore(newItems.length >= 20);
+        setSongsHasMore(res?.data?.songs?.hasMore ?? newItems.length >= 20);
       }
     } catch {} finally {
       setSongsLoadingMore(false);
     }
-  }, [songsPage, songsHasMore, songsLoadingMore, activeFilter]);
+  }, [songsPage, songsHasMore, songsLoadingMore]);
 
   const loadMore = useCallback(async (key: string) => {
     const section = sections[key];
@@ -118,8 +96,10 @@ const Index = () => {
         res = await getTrendingPlaylists(nextPage);
       } else if (key === 'podcasts') {
         res = await getTrendingPodcasts(nextPage, 30);
+      } else if (key === 'artists') {
+        res = await getTrendingArtists(nextPage);
       } else {
-        // albums/artists don't paginate
+        // albums don't paginate
         setSections(prev => ({ ...prev, [key]: { ...prev[key], loading: false, hasMore: false } }));
         return;
       }
@@ -178,7 +158,7 @@ const Index = () => {
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-accent/10 to-transparent rounded-full blur-3xl" />
       </motion.div>
 
-      {/* Popular Songs with Quick Filters */}
+      {/* Trending Songs */}
       <motion.section
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -188,27 +168,9 @@ const Index = () => {
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center shadow-lg">
             <Flame className="w-4 h-4 text-white" />
           </div>
-          <h2 className="text-base font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Popular Songs</h2>
+          <h2 className="text-base font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Trending Songs</h2>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex gap-2 flex-wrap mb-4">
-          {quickFilters.map((f) => (
-            <button
-              key={f.query}
-              onClick={() => setActiveFilter(f)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap ${
-                activeFilter.query === f.query
-                  ? 'btn-3d-primary text-primary-foreground'
-                  : 'btn-3d-glass text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Songs List with Load More button */}
         {songsLoading ? (
           <div className="flex items-center justify-center py-10">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -264,19 +226,13 @@ const Index = () => {
             </div>
 
             {key === 'artists' ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 justify-items-center">
+              <div className="grid gap-4 justify-items-center" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
                 {section.items.map((item: any) => (
                   <MusicCard key={item.id} item={item} type="artists" />
                 ))}
               </div>
-            ) : key === 'albums' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 justify-items-center">
-                {section.items.map((item: any) => (
-                  <MusicCard key={item.id || item._id} item={item} type="albums" />
-                ))}
-              </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 justify-items-center">
+              <div className="grid gap-3 justify-items-center" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
                 {section.items.map((item: any) => (
                   <MusicCard key={item.id || item._id} item={item} type={key as any} />
                 ))}

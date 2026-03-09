@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   searchSongs, searchAlbums, searchArtists, searchPlaylists, searchPodcasts,
-  getTrending, getTrendingPlaylists, getTrendingPodcasts,
+  getTrending, getTrendingPlaylists, getTrendingPodcasts, getTrendingArtists,
   extractResults,
 } from '@/lib/api';
 import SongItem from '@/components/SongItem';
@@ -25,13 +25,11 @@ const sectionMeta: Record<string, { icon: any; label: string; emoji: string }> =
   podcasts: { icon: Radio, label: 'Trending Podcasts', emoji: '🎙️' },
 };
 
-// Which trending endpoints support pagination
-// albums: none, artists: none, playlists: page only, podcasts: page+limit
-// songs: use /trending endpoint which has songs in it
+// Trending pagination: albums=none, artists=page, playlists=page, podcasts=page+limit, songs=from /trending
 const trendingCanPaginate: Record<string, boolean> = {
   songs: true,
   albums: false,
-  artists: false,
+  artists: true,
   playlists: true,
   podcasts: true,
 };
@@ -53,7 +51,6 @@ const TabSearch = ({ type }: { type: string }) => {
     setLoading(true);
 
     if (q.trim()) {
-      // Search mode
       setIsTrending(false);
       const fn = fetchFnMap[type];
       if (!fn) return;
@@ -63,14 +60,13 @@ const TabSearch = ({ type }: { type: string }) => {
         setHasMore(r.length >= 20);
       }).catch(() => {}).finally(() => setLoading(false));
     } else {
-      // Trending mode - use /trending endpoint for initial load
+      // Trending mode
       setIsTrending(true);
       getTrending(1, 30).then(data => {
         let r: any[] = [];
         if (data?.data) {
           if (type === 'songs') {
-            // songs come from data.songs or search
-            r = data.data.songs?.results || data.data.trending?.results || [];
+            r = data.data.songs?.results || [];
           } else {
             r = data.data[type]?.results || [];
           }
@@ -87,14 +83,26 @@ const TabSearch = ({ type }: { type: string }) => {
     const nextPage = page + 1;
     try {
       if (isTrending) {
-        // Only playlists and podcasts support trending pagination
         let res: any;
-        if (type === 'playlists') {
+        if (type === 'songs') {
+          // Songs from /trending endpoint
+          res = await getTrending(nextPage, 30);
+          const r = res?.data?.songs?.results || [];
+          if (r.length === 0) { setHasMore(false); } else {
+            setResults(prev => [...prev, ...r]);
+            setPage(nextPage);
+            setHasMore(res?.data?.songs?.hasMore ?? r.length >= 20);
+          }
+          setLoadingMore(false);
+          return;
+        } else if (type === 'playlists') {
           res = await getTrendingPlaylists(nextPage);
         } else if (type === 'podcasts') {
           res = await getTrendingPodcasts(nextPage, 30);
+        } else if (type === 'artists') {
+          res = await getTrendingArtists(nextPage);
         } else {
-          // songs search pagination, albums/artists don't paginate
+          // albums don't paginate
           setHasMore(false);
           setLoadingMore(false);
           return;
@@ -146,11 +154,11 @@ const TabSearch = ({ type }: { type: string }) => {
           {results.map((song, i) => <SongItem key={`${song.id}-${i}`} song={song} songList={results} songIdx={i} />)}
         </div>
       ) : type === 'artists' ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 justify-items-center">
+        <div className="grid gap-4 justify-items-center" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
           {results.map(item => <MusicCard key={item.id} item={item} type="artists" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 justify-items-center">
+        <div className="grid gap-3 justify-items-center" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
           {results.map(item => <MusicCard key={item.id || item._id} item={item} type={type as any} />)}
         </div>
       )}

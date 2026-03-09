@@ -190,9 +190,9 @@ export async function getTrendingAlbums() {
 export async function getTrendingPlaylists(page = 1) {
   return fetchJson(`${API}/trending/playlists?page=${page}`);
 }
-// Artists: only page=1, no limit param, no further pages
-export async function getTrendingArtists() {
-  return fetchJson(`${API}/trending/artists?page=1`);
+// Artists: page param works, no limit param
+export async function getTrendingArtists(page = 1) {
+  return fetchJson(`${API}/trending/artists?page=${page}`);
 }
 // Podcasts: page + limit both work
 export async function getTrendingPodcasts(page = 1, limit = 30) {
