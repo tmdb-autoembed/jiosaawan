@@ -252,7 +252,7 @@ const ExpandedPlayer = () => {
 
               {/* Quality */}
               <div className="mt-5 w-full">
-                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-wider text-center mb-2 font-semibold">Quality (kbps)</p>
+                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-wider text-center mb-2 font-semibold">Quality</p>
                 <div className="flex justify-center gap-2">
                   {QUALITY_OPTIONS.map(({ value, label }) => (
                     <button

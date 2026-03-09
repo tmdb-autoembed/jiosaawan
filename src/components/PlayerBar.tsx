@@ -80,7 +80,7 @@ const PlayerBar = () => {
             <button onClick={toggleRepeat} className={`p-1.5 rounded-full transition-all ${repeat ? 'text-accent2' : 'text-foreground/50'}`}>
               <Repeat className="w-3.5 h-3.5" />
             </button>
-            <button onClick={stopPlayer} className="p-1 text-muted-foreground/40 hover:text-accent transition-colors">
+            <button onClick={stopPlayer} className="p-1 text-foreground/40 hover:text-accent transition-colors">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
