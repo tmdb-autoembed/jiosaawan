@@ -9,9 +9,9 @@ import Equalizer from './Equalizer';
 import WaveBars from './WaveBars';
 
 const QUALITY_OPTIONS = [
-  { value: '96kbps', label: '96' },
-  { value: '160kbps', label: '160' },
-  { value: '320kbps', label: '320' },
+  { value: '96kbps', label: 'Low' },
+  { value: '160kbps', label: 'Medium' },
+  { value: '320kbps', label: 'High' },
 ];
 
 const ExpandedPlayer = () => {
