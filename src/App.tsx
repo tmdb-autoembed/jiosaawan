@@ -7,6 +7,7 @@ import TopBar from "@/components/TopBar";
 import PlayerBar from "@/components/PlayerBar";
 import ExpandedPlayer from "@/components/ExpandedPlayer";
 import QueuePanel from "@/components/QueuePanel";
+import Particles from "@/components/Particles";
 import Index from "./pages/Index";
 import SearchPage from "./pages/SearchPage";
 import TabSearch from "./pages/TabSearch";
