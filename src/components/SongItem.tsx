@@ -18,8 +18,8 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
   const dur = song.duration ? fmtTime(song.duration) : '';
 
   const metaParts: string[] = [];
-  if (song.album?.name) metaParts.push(song.album.name);
-  else if (typeof song.album === 'string') metaParts.push(song.album);
+  if (song.album?.name) metaParts.push(decodeHtml(song.album.name));
+  else if (typeof song.album === 'string') metaParts.push(decodeHtml(song.album));
   if (song.language) metaParts.push(song.language);
   if (song.year) metaParts.push(String(song.year));
 
