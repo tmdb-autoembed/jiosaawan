@@ -1,4 +1,4 @@
-import { getImg, getArtistStr, fmtTime } from '@/lib/api';
+import { getImg, getArtistStr, fmtTime, decodeHtml } from '@/lib/api';
 import { usePlayer } from '@/contexts/PlayerContext';
 import WaveBars from './WaveBars';
 
@@ -18,8 +18,8 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
   const dur = song.duration ? fmtTime(song.duration) : '';
 
   const metaParts: string[] = [];
-  if (song.album?.name) metaParts.push(song.album.name);
-  else if (typeof song.album === 'string') metaParts.push(song.album);
+  if (song.album?.name) metaParts.push(decodeHtml(song.album.name));
+  else if (typeof song.album === 'string') metaParts.push(decodeHtml(song.album));
   if (song.language) metaParts.push(song.language);
   if (song.year) metaParts.push(String(song.year));
 
@@ -62,7 +62,7 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
 
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold truncate ${isActive ? 'text-primary' : 'text-foreground'}`}>
-          {song.name || song.title || 'Unknown'}
+          {decodeHtml(song.name || song.title || 'Unknown')}
         </p>
         <p className="text-xs text-muted-foreground truncate mt-0.5">{artist}</p>
         {showMeta && metaParts.length > 0 && (
