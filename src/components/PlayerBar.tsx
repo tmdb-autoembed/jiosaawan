@@ -77,7 +77,7 @@ const PlayerBar = () => {
             <button onClick={playNext} className="p-1.5 text-foreground/70 hover:text-foreground transition-colors">
               <SkipForward className="w-4 h-4" />
             </button>
-            <button onClick={toggleRepeat} className={`p-1.5 rounded-full transition-all ${repeat ? 'text-accent2' : 'text-muted-foreground/60'}`}>
+            <button onClick={toggleRepeat} className={`p-1.5 rounded-full transition-all ${repeat ? 'text-accent2' : 'text-foreground/50'}`}>
               <Repeat className="w-3.5 h-3.5" />
             </button>
             <button onClick={stopPlayer} className="p-1 text-muted-foreground/40 hover:text-accent transition-colors">
