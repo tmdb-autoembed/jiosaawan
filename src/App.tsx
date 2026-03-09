@@ -28,7 +28,8 @@ const App = () => (
       <PlayerProvider>
         <Sonner position="top-center" />
         <BrowserRouter>
-          <div className="min-h-screen max-w-[600px] mx-auto relative flex flex-col">
+          <Particles />
+          <div className="min-h-screen max-w-[600px] mx-auto relative flex flex-col z-10">
             <TopBar />
             <main className="flex-1">
               <Routes>
