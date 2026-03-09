@@ -1,4 +1,4 @@
-import { getImg, getArtistStr, fmtTime } from '@/lib/api';
+import { getImg, getArtistStr, fmtTime, decodeHtml } from '@/lib/api';
 import { usePlayer } from '@/contexts/PlayerContext';
 import WaveBars from './WaveBars';
 
