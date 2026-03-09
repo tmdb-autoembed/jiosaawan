@@ -9,9 +9,9 @@ import Equalizer from './Equalizer';
 import WaveBars from './WaveBars';
 
 const QUALITY_OPTIONS = [
-  { value: '96kbps', label: 'Low' },
-  { value: '160kbps', label: 'Medium' },
-  { value: '320kbps', label: 'High' },
+  { value: '96kbps', label: '96' },
+  { value: '160kbps', label: '160' },
+  { value: '320kbps', label: '320' },
 ];
 
 const ExpandedPlayer = () => {
@@ -217,7 +217,7 @@ const ExpandedPlayer = () => {
                 }`}
               >
                 <InfinityIcon className="w-4 h-4" />
-                {autoPlay ? 'On' : 'Off'}
+                Auto-Play {autoPlay ? 'On' : 'Off'}
               </button>
 
               {/* Actions */}
@@ -252,7 +252,7 @@ const ExpandedPlayer = () => {
 
               {/* Quality */}
               <div className="mt-5 w-full">
-                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-wider text-center mb-2 font-semibold">Quality</p>
+                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-wider text-center mb-2 font-semibold">Quality (kbps)</p>
                 <div className="flex justify-center gap-2">
                   {QUALITY_OPTIONS.map(({ value, label }) => (
                     <button
