@@ -1,4 +1,4 @@
-import { getImg, getArtistStr } from '@/lib/api';
+import { getImg, getArtistStr, decodeHtml } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Play } from 'lucide-react';
