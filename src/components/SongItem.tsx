@@ -62,7 +62,7 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
 
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold truncate ${isActive ? 'text-primary' : 'text-foreground'}`}>
-          {song.name || song.title || 'Unknown'}
+          {decodeHtml(song.name || song.title || 'Unknown')}
         </p>
         <p className="text-xs text-muted-foreground truncate mt-0.5">{artist}</p>
         {showMeta && metaParts.length > 0 && (
