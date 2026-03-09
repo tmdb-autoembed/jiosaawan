@@ -13,7 +13,7 @@ const MusicCard = ({ item, type }: MusicCardProps) => {
   const { loadAndPlay } = usePlayer();
   const isArtist = type === 'artists';
   const imgUrl = getImg(item.image || item.squareImage, '150x150');
-  const name = item.name || item.title || 'Unknown';
+  const name = decodeHtml(item.name || item.title || 'Unknown');
   const sub = type === 'songs' ? getArtistStr(item)
     : type === 'albums' ? (item.primaryArtists || item.year || '')
     : type === 'artists' ? (item.role || 'Artist')
