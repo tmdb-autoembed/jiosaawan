@@ -60,7 +60,7 @@ const PlayerBar = () => {
 
           {/* Controls */}
           <div className="flex items-center gap-0.5">
-            <button onClick={toggleShuffle} className={`p-1.5 rounded-full transition-all ${shuffle ? 'text-accent3' : 'text-muted-foreground/60'}`}>
+            <button onClick={toggleShuffle} className={`p-1.5 rounded-full transition-all ${shuffle ? 'text-accent3' : 'text-foreground/50'}`}>
               <Shuffle className="w-3.5 h-3.5" />
             </button>
             <button onClick={playPrev} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
