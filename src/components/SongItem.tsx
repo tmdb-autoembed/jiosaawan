@@ -35,26 +35,31 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
   return (
     <div
       onClick={handleClick}
-      className={`group flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-secondary/40 active:scale-[0.98] ${
+      className={`group flex items-center gap-3 p-2.5 rounded-2xl cursor-pointer transition-all duration-200 active:scale-[0.98] ${
         isActive
-          ? 'card-surface-warm ring-1 ring-primary/30 shadow-md shadow-primary/5'
-          : 'card-surface hover:translate-x-0.5'
+          ? 'ring-1 ring-primary/30 shadow-md shadow-primary/10'
+          : 'hover:translate-x-0.5'
       }`}
+      style={{
+        background: isActive
+          ? 'linear-gradient(135deg, hsla(25, 80%, 50%, 0.15), hsla(340, 70%, 45%, 0.12), hsla(250, 30%, 20%, 0.2))'
+          : 'linear-gradient(135deg, hsla(250, 20%, 14%, 0.5), hsla(250, 18%, 12%, 0.4))',
+      }}
     >
       <div className="relative flex-shrink-0">
         {imgUrl ? (
           <img
             src={imgUrl}
-            alt={song.name || ''}
+            alt={decodeHtml(song.name || '')}
             loading="lazy"
-            className={`w-12 h-12 rounded-xl object-cover ${isActive ? 'ring-2 ring-primary/40' : ''}`}
+            className={`w-10 h-10 rounded-lg object-cover ${isActive ? 'ring-2 ring-primary/40' : ''}`}
             onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
           />
         ) : (
-          <div className="w-12 h-12 rounded-xl bg-secondary flex-shrink-0" />
+          <div className="w-10 h-10 rounded-lg bg-secondary flex-shrink-0" />
         )}
         {isActive && isPlaying && (
-          <div className="absolute inset-0 rounded-xl bg-black/30 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-lg bg-black/30 flex items-center justify-center">
             <WaveBars />
           </div>
         )}

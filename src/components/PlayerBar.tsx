@@ -60,10 +60,10 @@ const PlayerBar = () => {
 
           {/* Controls */}
           <div className="flex items-center gap-0.5">
-            <button onClick={toggleShuffle} className={`p-1.5 rounded-full transition-all ${shuffle ? 'text-accent3' : 'text-muted-foreground/60'}`}>
+            <button onClick={toggleShuffle} className={`p-1.5 rounded-full transition-all ${shuffle ? 'text-accent3' : 'text-foreground/50'}`}>
               <Shuffle className="w-3.5 h-3.5" />
             </button>
-            <button onClick={playPrev} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={playPrev} className="p-1.5 text-foreground/70 hover:text-foreground transition-colors">
               <SkipBack className="w-4 h-4" />
             </button>
             <motion.button
@@ -74,13 +74,13 @@ const PlayerBar = () => {
             >
               {isPlaying ? <Pause className="w-4.5 h-4.5" /> : <Play className="w-4.5 h-4.5 ml-0.5" />}
             </motion.button>
-            <button onClick={playNext} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={playNext} className="p-1.5 text-foreground/70 hover:text-foreground transition-colors">
               <SkipForward className="w-4 h-4" />
             </button>
-            <button onClick={toggleRepeat} className={`p-1.5 rounded-full transition-all ${repeat ? 'text-accent2' : 'text-muted-foreground/60'}`}>
+            <button onClick={toggleRepeat} className={`p-1.5 rounded-full transition-all ${repeat ? 'text-accent2' : 'text-foreground/50'}`}>
               <Repeat className="w-3.5 h-3.5" />
             </button>
-            <button onClick={stopPlayer} className="p-1 text-muted-foreground/40 hover:text-accent transition-colors">
+            <button onClick={stopPlayer} className="p-1 text-foreground/40 hover:text-accent transition-colors">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
