@@ -217,7 +217,7 @@ const ExpandedPlayer = () => {
                 }`}
               >
                 <InfinityIcon className="w-4 h-4" />
-                Auto-Play {autoPlay ? 'On' : 'Off'}
+                {autoPlay ? 'On' : 'Off'}
               </button>
 
               {/* Actions */}
