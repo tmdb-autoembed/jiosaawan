@@ -74,7 +74,7 @@ const PlayerBar = () => {
             >
               {isPlaying ? <Pause className="w-4.5 h-4.5" /> : <Play className="w-4.5 h-4.5 ml-0.5" />}
             </motion.button>
-            <button onClick={playNext} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={playNext} className="p-1.5 text-foreground/70 hover:text-foreground transition-colors">
               <SkipForward className="w-4 h-4" />
             </button>
             <button onClick={toggleRepeat} className={`p-1.5 rounded-full transition-all ${repeat ? 'text-accent2' : 'text-muted-foreground/60'}`}>
