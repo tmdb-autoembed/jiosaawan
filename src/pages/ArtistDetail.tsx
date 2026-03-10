@@ -37,7 +37,7 @@ const ArtistDetail = () => {
     Promise.all([
       getArtistById(id),
       getArtistSongs(id, 1, 20).catch(() => null),
-      getArtistAlbums(id, 1, 20).catch(() => null),
+      getArtistAlbums(id, 1).catch(() => null),
       getRelatedArtists(id).catch(() => null),
     ]).then(([artistRes, songsRes, albumsRes, relatedRes]) => {
       const a = artistRes?.data || artistRes;
