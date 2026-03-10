@@ -37,7 +37,7 @@ const ArtistDetail = () => {
     Promise.all([
       getArtistById(id),
       getArtistSongs(id, 1, 20).catch(() => null),
-      getArtistAlbums(id, 1, 20).catch(() => null),
+      getArtistAlbums(id, 1).catch(() => null),
       getRelatedArtists(id).catch(() => null),
     ]).then(([artistRes, songsRes, albumsRes, relatedRes]) => {
       const a = artistRes?.data || artistRes;
@@ -75,7 +75,7 @@ const ArtistDetail = () => {
     setAlbumsLoadingMore(true);
     try {
       const next = albumsPage + 1;
-      const res = await getArtistAlbums(id, next, 20);
+      const res = await getArtistAlbums(id, next);
       const items = extractResults(res);
       if (items.length === 0) { setAlbumsHasMore(false); }
       else { setAlbums(p => [...p, ...items]); setAlbumsPage(next); setAlbumsHasMore(items.length >= 20); }
