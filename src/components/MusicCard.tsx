@@ -5,7 +5,7 @@ import { Play } from 'lucide-react';
 
 interface MusicCardProps {
   item: any;
-  type: 'songs' | 'albums' | 'artists' | 'playlists' | 'podcasts';
+  type: 'songs' | 'albums' | 'artists' | 'playlists' | 'podcasts' | 'radio' | 'channels';
 }
 
 const MusicCard = ({ item, type }: MusicCardProps) => {
@@ -19,6 +19,8 @@ const MusicCard = ({ item, type }: MusicCardProps) => {
     : type === 'artists' ? (item.role || 'Artist')
     : type === 'playlists' ? `${item.songCount || 0} songs`
     : type === 'podcasts' ? (item.language || 'Podcast')
+    : type === 'radio' ? (item.language || item.description || 'Radio')
+    : type === 'channels' ? (item.subType || 'Channel')
     : '';
 
   const handleClick = () => {
@@ -27,6 +29,8 @@ const MusicCard = ({ item, type }: MusicCardProps) => {
     else if (type === 'artists') navigate(`/artist/${item.id}`);
     else if (type === 'playlists') navigate(`/playlist/${item.id || item._id}`);
     else if (type === 'podcasts') navigate(`/podcast/${item.id || item._id}`);
+    else if (type === 'radio') navigate(`/radio/${encodeURIComponent(item.id)}`);
+    else if (type === 'channels') navigate(`/channel/${item.id}`);
   };
 
   if (isArtist) {
@@ -68,7 +72,7 @@ const MusicCard = ({ item, type }: MusicCardProps) => {
       </div>
       <div className="p-3">
         <p className="text-xs font-semibold text-foreground truncate">{name}</p>
-        <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{sub}</p>
+        <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{decodeHtml(String(sub))}</p>
       </div>
     </button>
   );
