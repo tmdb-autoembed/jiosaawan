@@ -18,6 +18,13 @@ import LyricsPage from "./pages/LyricsPage";
 import PodcastsPage from "./pages/PodcastsPage";
 import PodcastDetail from "./pages/PodcastDetail";
 import Profile from "./pages/Profile";
+import ChartsPage from "./pages/ChartsPage";
+import GenresPage from "./pages/GenresPage";
+import MoodsPage from "./pages/MoodsPage";
+import RadioPage from "./pages/RadioPage";
+import RadioDetail from "./pages/RadioDetail";
+import ChannelDetail from "./pages/ChannelDetail";
+import DiscoverPage from "./pages/DiscoverPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +52,13 @@ const App = () => (
                 <Route path="/playlist/:id" element={<PlaylistDetail />} />
                 <Route path="/podcasts" element={<PodcastsPage />} />
                 <Route path="/podcast/:id" element={<PodcastDetail />} />
+                <Route path="/charts" element={<ChartsPage />} />
+                <Route path="/genres" element={<GenresPage />} />
+                <Route path="/moods" element={<MoodsPage />} />
+                <Route path="/radio" element={<RadioPage />} />
+                <Route path="/radio/:id" element={<RadioDetail />} />
+                <Route path="/channel/:id" element={<ChannelDetail />} />
+                <Route path="/discover" element={<DiscoverPage />} />
                 <Route path="/lyrics" element={<LyricsPage />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="*" element={<NotFound />} />

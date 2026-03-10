@@ -13,7 +13,7 @@ const PodcastsPage = () => {
 
   useEffect(() => {
     setLoading(true);
-    getTrendingPodcasts(1, 30)
+    getTrendingPodcasts()
       .then(res => setPodcasts(res?.data?.results || []))
       .catch(() => {})
       .finally(() => setLoading(false));

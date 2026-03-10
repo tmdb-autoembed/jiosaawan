@@ -75,7 +75,7 @@ const ArtistDetail = () => {
     setAlbumsLoadingMore(true);
     try {
       const next = albumsPage + 1;
-      const res = await getArtistAlbums(id, next, 20);
+      const res = await getArtistAlbums(id, next);
       const items = extractResults(res);
       if (items.length === 0) { setAlbumsHasMore(false); }
       else { setAlbums(p => [...p, ...items]); setAlbumsPage(next); setAlbumsHasMore(items.length >= 20); }

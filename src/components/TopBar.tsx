@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, X, Home, Music, Disc3, Star, ListMusic, User, Radio, Headphones } from 'lucide-react';
+import { Search, X, Home, Music, Disc3, Star, ListMusic, User, Radio, Headphones, BarChart3, Heart, Compass, Layers } from 'lucide-react';
 
 const tabs = [
   { id: 'home', label: 'Home', icon: Home, path: '/' },
@@ -8,7 +8,12 @@ const tabs = [
   { id: 'albums', label: 'Albums', icon: Disc3, path: '/search/albums' },
   { id: 'artists', label: 'Artists', icon: Star, path: '/search/artists' },
   { id: 'playlists', label: 'Playlists', icon: ListMusic, path: '/search/playlists' },
-  { id: 'podcasts', label: 'Podcasts', icon: Radio, path: '/search/podcasts' },
+  { id: 'charts', label: 'Charts', icon: BarChart3, path: '/charts' },
+  { id: 'radio', label: 'Radio', icon: Radio, path: '/radio' },
+  { id: 'moods', label: 'Moods', icon: Heart, path: '/moods' },
+  { id: 'genres', label: 'Genres', icon: Layers, path: '/genres' },
+  { id: 'discover', label: 'Discover', icon: Compass, path: '/discover' },
+  { id: 'podcasts', label: 'Podcasts', icon: Headphones, path: '/podcasts' },
   { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
 
@@ -31,6 +36,12 @@ const TopBar = () => {
     const p = location.pathname;
     if (p === '/') return 'home';
     if (p === '/profile') return 'profile';
+    if (p === '/charts') return 'charts';
+    if (p === '/radio' || p.startsWith('/radio/')) return 'radio';
+    if (p === '/moods') return 'moods';
+    if (p === '/genres') return 'genres';
+    if (p === '/discover') return 'discover';
+    if (p === '/podcasts' || p.startsWith('/podcast/')) return 'podcasts';
     if (p.startsWith('/search/podcasts')) return 'podcasts';
     if (p.startsWith('/search/songs')) return 'songs';
     if (p.startsWith('/search/albums')) return 'albums';
@@ -40,15 +51,13 @@ const TopBar = () => {
   })();
 
   const handleTabClick = (tab: typeof tabs[0]) => {
-    if (tab.id === 'home' || tab.id === 'profile') {
-      navigate(tab.path);
-    } else {
+    const searchTabs = ['songs', 'albums', 'artists', 'playlists'];
+    if (searchTabs.includes(tab.id)) {
       const q = query.trim();
-      if (q) {
-        navigate(`/search/${tab.id}?q=${encodeURIComponent(q)}`);
-      } else {
-        navigate(`/search/${tab.id}`);
-      }
+      if (q) navigate(`/search/${tab.id}?q=${encodeURIComponent(q)}`);
+      else navigate(`/search/${tab.id}`);
+    } else {
+      navigate(tab.path);
     }
   };
 

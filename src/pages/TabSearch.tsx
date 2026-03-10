@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   searchSongs, searchAlbums, searchArtists, searchPlaylists, searchPodcasts,
-  getTrending, getTrendingPlaylists, getTrendingPodcasts, getTrendingArtists,
+  getTrending,
   extractResults,
 } from '@/lib/api';
 import SongItem from '@/components/SongItem';
@@ -23,15 +23,6 @@ const sectionMeta: Record<string, { icon: any; label: string; emoji: string }> =
   artists: { icon: Star, label: 'Top Artists', emoji: '⭐' },
   playlists: { icon: ListMusic, label: 'Popular Playlists', emoji: '🎵' },
   podcasts: { icon: Radio, label: 'Trending Podcasts', emoji: '🎙️' },
-};
-
-// Trending pagination: albums=none, artists=page, playlists=page, podcasts=page+limit, songs=from /trending
-const trendingCanPaginate: Record<string, boolean> = {
-  songs: true,
-  albums: false,
-  artists: true,
-  playlists: true,
-  podcasts: true,
 };
 
 const TabSearch = ({ type }: { type: string }) => {
@@ -60,9 +51,9 @@ const TabSearch = ({ type }: { type: string }) => {
         setHasMore(r.length >= 20);
       }).catch(() => {}).finally(() => setLoading(false));
     } else {
-      // Trending mode
+      // Trending mode — no pagination on trending endpoints
       setIsTrending(true);
-      getTrending(1, 30).then(data => {
+      getTrending().then(data => {
         let r: any[] = [];
         if (data?.data) {
           if (type === 'songs') {
@@ -72,98 +63,77 @@ const TabSearch = ({ type }: { type: string }) => {
           }
         }
         setResults(r);
-        setHasMore(trendingCanPaginate[type] ? (r.length >= 20) : false);
+        setHasMore(false); // Trending has no pagination
       }).catch(() => {}).finally(() => setLoading(false));
     }
   }, [type, q]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMore || !hasMore || isTrending) return;
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
-      if (isTrending) {
-        let res: any;
-        if (type === 'songs') {
-          // Songs from /trending endpoint
-          res = await getTrending(nextPage, 30);
-          const r = res?.data?.songs?.results || [];
-          if (r.length === 0) { setHasMore(false); } else {
-            setResults(prev => [...prev, ...r]);
-            setPage(nextPage);
-            setHasMore(res?.data?.songs?.hasMore ?? r.length >= 20);
-          }
-          setLoadingMore(false);
-          return;
-        } else if (type === 'playlists') {
-          res = await getTrendingPlaylists(nextPage);
-        } else if (type === 'podcasts') {
-          res = await getTrendingPodcasts(nextPage, 30);
-        } else if (type === 'artists') {
-          res = await getTrendingArtists(nextPage);
-        } else {
-          // albums don't paginate
-          setHasMore(false);
-          setLoadingMore(false);
-          return;
-        }
-        const r = res?.data?.results || [];
-        if (r.length === 0) {
-          setHasMore(false);
-        } else {
-          setResults(prev => [...prev, ...r]);
-          setPage(nextPage);
-          setHasMore(res?.data?.hasMore ?? r.length >= 20);
-        }
-      } else {
-        const data = await fetchFnMap[type](q, 20, nextPage);
-        const r = extractResults(data);
+      const fn = fetchFnMap[type];
+      if (!fn) { setHasMore(false); setLoadingMore(false); return; }
+      const data = await fn(q, 20, nextPage);
+      const r = extractResults(data);
+      if (r.length === 0) { setHasMore(false); }
+      else {
         setResults(prev => [...prev, ...r]);
         setPage(nextPage);
-        if (r.length < 20) setHasMore(false);
+        setHasMore(r.length >= 20);
       }
-    } catch {}
-    setLoadingMore(false);
-  }, [page, hasMore, loadingMore, type, q, isTrending]);
+    } catch {} finally { setLoadingMore(false); }
+  }, [page, hasMore, loadingMore, isTrending, type, q]);
 
   const meta = sectionMeta[type] || sectionMeta.songs;
+  const Icon = meta.icon;
+  const heading = q
+    ? `${meta.emoji} "${q}" — ${meta.label}`
+    : `${meta.emoji} ${meta.label}`;
 
-  if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>;
-  if (!results.length && q) return <div className="text-center py-16 text-muted-foreground">No results for "{q}"</div>;
-  if (!results.length) return <div className="text-center py-16 text-muted-foreground">No content available</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!results.length) {
+    return <p className="text-center text-muted-foreground py-10">No results found</p>;
+  }
 
   return (
-    <div className="p-4 pb-40">
-      {/* Header */}
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-8 h-8 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg btn-3d">
-          <meta.icon className="w-4 h-4 text-primary-foreground" />
+    <div className="p-4 pb-40 space-y-4">
+      <div className="flex items-center gap-2.5 mb-2">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+          <Icon className="w-4 h-4 text-white" />
         </div>
-        <h2 className="text-sm font-black text-foreground capitalize" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          {q ? `${type}: "${q}"` : `${meta.emoji} ${meta.label}`}
-        </h2>
-        {isTrending && (
-          <span className="ml-auto px-2.5 py-1 rounded-xl bg-gradient-warm text-[10px] font-bold text-primary-foreground btn-3d-sm">
-            TRENDING
-          </span>
-        )}
+        <h2 className="text-base font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{heading}</h2>
       </div>
 
       {type === 'songs' ? (
-        <div className="space-y-1.5">
-          {results.map((song, i) => <SongItem key={`${song.id}-${i}`} song={song} songList={results} songIdx={i} />)}
+        <div className="space-y-2">
+          {results.map((song: any, i: number) => (
+            <SongItem key={`${song.id}-${i}`} song={song} songList={results} songIdx={i} />
+          ))}
         </div>
       ) : type === 'artists' ? (
         <div className="grid gap-4 justify-items-center" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
-          {results.map(item => <MusicCard key={item.id} item={item} type="artists" />)}
+          {results.map((item: any) => (
+            <MusicCard key={item.id} item={item} type="artists" />
+          ))}
         </div>
       ) : (
         <div className="grid gap-3 justify-items-center" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
-          {results.map(item => <MusicCard key={item.id || item._id} item={item} type={type as any} />)}
+          {results.map((item: any) => (
+            <MusicCard key={item.id || item._id} item={item} type={type as any} />
+          ))}
         </div>
       )}
 
-      {hasMore ? (
+      {hasMore && (
         <button
           onClick={loadMore}
           disabled={loadingMore}
@@ -171,8 +141,6 @@ const TabSearch = ({ type }: { type: string }) => {
         >
           {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : `Load More`}
         </button>
-      ) : results.length > 0 && (
-        <p className="text-center text-xs text-muted-foreground/50 py-3 font-medium">— No more results —</p>
       )}
     </div>
   );
