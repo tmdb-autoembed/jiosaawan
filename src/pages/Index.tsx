@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getHomeFeed, getImg, decodeHtml } from '@/lib/api';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
-import { Flame, Disc3, ListMusic, Star, Radio, Sparkles, Music, BarChart3, Headphones, MapPin, Heart, Loader2, ChevronRight } from 'lucide-react';
+import { Flame, Disc3, ListMusic, Star, Radio, Sparkles, Music, BarChart3, Headphones, MapPin, Heart, ChevronRight, TrendingUp, Zap, Globe, Podcast } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePlayer } from '@/contexts/PlayerContext';
@@ -23,7 +23,7 @@ const Index = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center animate-play-pulse">
+        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center animate-pulse">
           <Music className="w-8 h-8 text-primary-foreground" />
         </div>
         <p className="text-sm text-muted-foreground animate-pulse font-medium">Discovering music…</p>
@@ -33,7 +33,7 @@ const Index = () => {
 
   if (!homeData) return <p className="text-center text-muted-foreground py-10">Failed to load</p>;
 
-  // Extract modules from home data
+  // Extract ALL modules from home data
   const trending = homeData.trending || homeData.new_trending || {};
   const trendingSongs = trending.songs || [];
   const trendingAlbums = trending.albums || [];
@@ -44,36 +44,66 @@ const Index = () => {
   const artistRecos = homeData.artist_recos || [];
   const cityMod = homeData.city_mod || [];
   const topShows = homeData.top_shows || [];
-  
+  const tagMixes = homeData.tag_mixes || [];
+  const brandNew = homeData.brand_new || [];
+  const topArtists = homeData.top_artists || [];
+  const modules = homeData.modules || {};
+
   // Promos (various sections)
   const promos = homeData.promos || {};
-  const freshHits = promos['promo:vx:data:68'] || [];
-  const genresMoods = promos['promo:vx:data:76'] || [];
-  const bestOf90s = promos['promo:vx:data:185'] || [];
-  const trendingPodcasts = promos['promo:vx:data:107'] || [];
+  const promoKeys = Object.keys(promos);
+  
+  // Build promo sections dynamically
+  const promoSections = promoKeys.map(key => {
+    const items = getItems(promos[key]);
+    if (!items.length) return null;
+    // Try to get a nice title from the first item or key
+    const title = key.replace(/promo:vx:data:/g, '').replace(/_/g, ' ');
+    return { key, title: `Featured ${title}`, items, renderType: 'playlists' as const };
+  }).filter(Boolean);
 
-  // Flatten all items if they have results nested
-  const getItems = (data: any): any[] => {
+  function getItems(data: any): any[] {
     if (Array.isArray(data)) return data;
     if (data?.results) return data.results;
-    if (data?.data) return Array.isArray(data.data) ? data.data : data.data.results || [];
+    if (data?.data) return Array.isArray(data.data) ? data.data : data.data?.results || [];
     return [];
+  }
+
+  const iconMap: Record<string, any> = {
+    songs: Flame, charts: BarChart3, newAlbums: Disc3, playlists: ListMusic,
+    trendingAlbums: TrendingUp, radio: Radio, artistRecos: Star,
+    cityMod: MapPin, topShows: Headphones, tagMixes: Zap, brandNew: Sparkles,
+    topArtists: Globe,
+  };
+
+  const gradientMap: Record<string, string> = {
+    songs: 'from-orange-500 to-rose-500',
+    charts: 'from-emerald-500 to-teal-500',
+    newAlbums: 'from-violet-500 to-indigo-500',
+    playlists: 'from-sky-500 to-blue-600',
+    trendingAlbums: 'from-pink-500 to-rose-500',
+    radio: 'from-amber-400 to-orange-500',
+    artistRecos: 'from-purple-500 to-pink-500',
+    cityMod: 'from-cyan-500 to-blue-500',
+    topShows: 'from-indigo-500 to-violet-500',
+    tagMixes: 'from-yellow-500 to-amber-500',
+    brandNew: 'from-green-500 to-emerald-500',
+    topArtists: 'from-fuchsia-500 to-purple-500',
   };
 
   const sections = [
-    { key: 'songs', title: 'Trending Songs', icon: Flame, gradient: 'from-orange-500 to-rose-500', items: getItems(trendingSongs), renderType: 'songs' },
-    { key: 'charts', title: 'Top Charts', icon: BarChart3, gradient: 'from-emerald-500 to-teal-500', items: getItems(charts), renderType: 'playlists', seeAll: '/charts' },
-    { key: 'newAlbums', title: 'New Releases', icon: Disc3, gradient: 'from-violet-500 to-indigo-500', items: getItems(newAlbums), renderType: 'albums' },
-    { key: 'playlists', title: 'Editorial Picks', icon: ListMusic, gradient: 'from-sky-500 to-blue-600', items: getItems(topPlaylists), renderType: 'playlists' },
-    { key: 'trendingAlbums', title: 'Trending Albums', icon: Disc3, gradient: 'from-pink-500 to-rose-500', items: getItems(trendingAlbums), renderType: 'albums' },
-    { key: 'radio', title: 'Radio Stations', icon: Radio, gradient: 'from-amber-400 to-orange-500', items: getItems(radio), renderType: 'radio', seeAll: '/radio' },
-    { key: 'artistRecos', title: 'Recommended Artists', icon: Star, gradient: 'from-purple-500 to-pink-500', items: getItems(artistRecos), renderType: 'artists' },
-    { key: 'cityMod', title: "What's Hot Near You", icon: MapPin, gradient: 'from-cyan-500 to-blue-500', items: getItems(cityMod), renderType: 'mixed' },
-    { key: 'freshHits', title: 'Fresh Hits', icon: Sparkles, gradient: 'from-green-500 to-emerald-500', items: getItems(freshHits), renderType: 'playlists' },
-    { key: 'genresMoods', title: 'Top Genres & Moods', icon: Heart, gradient: 'from-rose-500 to-pink-500', items: getItems(genresMoods), renderType: 'channels', seeAll: '/moods' },
-    { key: 'trendingPodcasts', title: 'Trending Podcasts', icon: Headphones, gradient: 'from-fuchsia-500 to-purple-500', items: getItems(trendingPodcasts), renderType: 'podcasts', seeAll: '/podcasts' },
-    { key: 'bestOf90s', title: 'Best Of 90s', icon: Music, gradient: 'from-yellow-500 to-amber-500', items: getItems(bestOf90s), renderType: 'playlists' },
-    { key: 'topShows', title: 'Top Shows', icon: Headphones, gradient: 'from-indigo-500 to-violet-500', items: getItems(topShows), renderType: 'podcasts' },
+    { key: 'songs', title: 'Trending Songs', items: getItems(trendingSongs), renderType: 'songs', seeAll: '/search/songs' },
+    { key: 'charts', title: 'Top Charts', items: getItems(charts), renderType: 'playlists', seeAll: '/charts' },
+    { key: 'newAlbums', title: 'New Releases', items: getItems(newAlbums), renderType: 'albums', seeAll: '/search/albums' },
+    { key: 'playlists', title: 'Editorial Picks', items: getItems(topPlaylists), renderType: 'playlists', seeAll: '/search/playlists' },
+    { key: 'trendingAlbums', title: 'Trending Albums', items: getItems(trendingAlbums), renderType: 'albums', seeAll: '/search/albums' },
+    { key: 'radio', title: 'Radio Stations', items: getItems(radio), renderType: 'radio', seeAll: '/radio' },
+    { key: 'artistRecos', title: 'Recommended Artists', items: getItems(artistRecos), renderType: 'artists', seeAll: '/search/artists' },
+    { key: 'cityMod', title: "What's Hot Near You", items: getItems(cityMod), renderType: 'mixed', seeAll: null },
+    { key: 'tagMixes', title: 'Tag Mixes', items: getItems(tagMixes), renderType: 'playlists', seeAll: '/moods' },
+    { key: 'brandNew', title: 'Brand New', items: getItems(brandNew), renderType: 'albums', seeAll: '/search/albums' },
+    { key: 'topArtists', title: 'Top Artists', items: getItems(topArtists), renderType: 'artists', seeAll: '/search/artists' },
+    { key: 'topShows', title: 'Top Shows', items: getItems(topShows), renderType: 'podcasts', seeAll: '/podcasts' },
   ].filter(s => s.items.length > 0);
 
   const handleItemClick = (item: any, renderType: string) => {
@@ -93,6 +123,68 @@ const Index = () => {
     else if (renderType === 'channels') navigate(`/channel/${item.id}`);
   };
 
+  const renderSection = (key: string, title: string, items: any[], renderType: string, seeAll: string | null, sIdx: number) => {
+    const Icon = iconMap[key] || Music;
+    const gradient = gradientMap[key] || 'from-primary to-accent';
+
+    return (
+      <motion.section
+        key={key}
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 + sIdx * 0.03 }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+              <Icon className="w-4 h-4 text-white" />
+            </div>
+            <h2 className="text-base font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{title}</h2>
+          </div>
+          {seeAll && (
+            <button onClick={() => navigate(seeAll)} className="text-xs text-primary font-semibold flex items-center gap-0.5 hover:underline">
+              Show More <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {renderType === 'songs' ? (
+          <div className="space-y-2">
+            {items.slice(0, 20).map((song: any, i: number) => (
+              <SongItem key={`${song.id}-${i}`} song={song} songList={items} songIdx={i} />
+            ))}
+          </div>
+        ) : renderType === 'artists' ? (
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+            {items.map((item: any) => (
+              <MusicCard key={item.id} item={item} type="artists" />
+            ))}
+          </div>
+        ) : (
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+            {items.map((item: any) => {
+              const type = item.type;
+              let cardType: 'albums' | 'playlists' | 'podcasts' | 'songs' | 'artists' | 'radio' | 'channels' = 'playlists';
+              if (type === 'album') cardType = 'albums';
+              else if (type === 'artist') cardType = 'artists';
+              else if (type === 'show' || type === 'podcast') cardType = 'podcasts';
+              else if (type === 'song') cardType = 'songs';
+              else if (renderType === 'albums') cardType = 'albums';
+              else if (renderType === 'podcasts') cardType = 'podcasts';
+              else if (renderType === 'radio') cardType = 'radio';
+
+              return (
+                <div key={item.id || item._id || Math.random()} className="flex-shrink-0" onClick={() => handleItemClick(item, renderType)}>
+                  <MusicCard item={item} type={cardType} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </motion.section>
+    );
+  };
+
   return (
     <div className="p-4 pb-40 space-y-8">
       {/* Hero */}
@@ -104,76 +196,26 @@ const Index = () => {
       >
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Discover</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            What's <span className="text-gradient">Trending</span> Today
+            What's <span className="text-primary">Trending</span> Today
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Curated from millions of listeners</p>
         </div>
-        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-primary/15 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-accent/10 to-transparent rounded-full blur-3xl" />
       </motion.div>
 
-      {/* Render all sections dynamically */}
-      {sections.map(({ key, title, icon: Icon, gradient, items, renderType, seeAll }, sIdx) => (
-        <motion.section
-          key={key}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 + sIdx * 0.04 }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
-                <Icon className="w-4 h-4 text-white" />
-              </div>
-              <h2 className="text-base font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{title}</h2>
-            </div>
-            {seeAll && (
-              <button onClick={() => navigate(seeAll)} className="text-xs text-primary font-semibold flex items-center gap-0.5 hover:underline">
-                See All <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+      {/* All main sections */}
+      {sections.map((s, i) => renderSection(s.key, s.title, s.items, s.renderType, s.seeAll, i))}
 
-          {renderType === 'songs' ? (
-            <div className="space-y-2">
-              {items.slice(0, 20).map((song: any, i: number) => (
-                <SongItem key={`${song.id}-${i}`} song={song} songList={items} songIdx={i} />
-              ))}
-            </div>
-          ) : renderType === 'artists' ? (
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
-              {items.map((item: any) => (
-                <MusicCard key={item.id} item={item} type="artists" />
-              ))}
-            </div>
-          ) : (
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-              {items.map((item: any) => {
-                const type = item.type;
-                let cardType: 'albums' | 'playlists' | 'podcasts' | 'songs' | 'artists' = 'playlists';
-                if (type === 'album') cardType = 'albums';
-                else if (type === 'artist') cardType = 'artists';
-                else if (type === 'show' || type === 'podcast') cardType = 'podcasts';
-                else if (type === 'song') cardType = 'songs';
-                else if (renderType === 'albums') cardType = 'albums';
-                else if (renderType === 'podcasts') cardType = 'podcasts';
-
-                return (
-                  <div key={item.id || item._id} className="flex-shrink-0" onClick={() => handleItemClick(item, renderType)}>
-                    <MusicCard item={item} type={cardType} />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </motion.section>
-      ))}
+      {/* Dynamic promo sections */}
+      {promoSections.map((s: any, i: number) => {
+        if (!s) return null;
+        return renderSection(s.key, s.title, s.items, s.renderType, null, sections.length + i);
+      })}
     </div>
   );
 };
