@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getHomeFeed, getImg, decodeHtml } from '@/lib/api';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
-import { Flame, Disc3, ListMusic, Star, Radio, Sparkles, Music, BarChart3, Headphones, MapPin, Heart, ChevronRight, TrendingUp, Zap, Globe, Podcast } from 'lucide-react';
+import { Flame, Disc3, ListMusic, Star, Radio, Sparkles, Music, BarChart3, Headphones, MapPin, ChevronRight, TrendingUp, Zap, Globe, Podcast } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePlayer } from '@/contexts/PlayerContext';
@@ -53,13 +53,20 @@ const Index = () => {
   const promos = homeData.promos || {};
   const promoKeys = Object.keys(promos);
   
-  // Build promo sections dynamically
+  // Build promo sections dynamically with proper names
   const promoSections = promoKeys.map(key => {
     const items = getItems(promos[key]);
     if (!items.length) return null;
-    // Try to get a nice title from the first item or key
-    const title = key.replace(/promo:vx:data:/g, '').replace(/_/g, ' ');
-    return { key, title: `Featured ${title}`, items, renderType: 'playlists' as const };
+    // Try to get title from module info or first item
+    let title = '';
+    if (modules[key]?.title) {
+      title = decodeHtml(modules[key].title);
+    } else {
+      // Try to build a nice title from the key
+      const cleanKey = key.replace(/promo:vx:data:/g, '').replace(/_/g, ' ').replace(/\d+/g, '').trim();
+      title = cleanKey ? cleanKey.charAt(0).toUpperCase() + cleanKey.slice(1) : 'Playlists';
+    }
+    return { key, title, items, renderType: 'playlists' as const };
   }).filter(Boolean);
 
   function getItems(data: any): any[] {

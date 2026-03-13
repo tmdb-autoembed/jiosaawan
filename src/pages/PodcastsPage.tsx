@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getTrendingPodcasts, searchPodcasts, getImg } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 import { Radio, Search, Loader2, Headphones } from 'lucide-react';
@@ -10,11 +10,18 @@ const PodcastsPage = () => {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     getTrendingPodcasts()
-      .then(res => setPodcasts(res?.data?.results || []))
+      .then(res => {
+        const items = res?.data?.results || [];
+        setPodcasts(items);
+        setHasMore(res?.data?.hasMore ?? items.length >= 10);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -22,21 +29,39 @@ const PodcastsPage = () => {
   const handleSearch = async () => {
     if (!query.trim()) return;
     setSearching(true);
+    setPage(1);
     try {
       const res = await searchPodcasts(query.trim(), 1, 20);
       const data = res?.data;
       if (data) {
-        // Could be direct result or nested
         const items = data.episodes || data.results || (Array.isArray(data) ? data : [data]);
-        if (items.length) setPodcasts(items);
+        if (items.length) {
+          setPodcasts(items);
+          setHasMore(items.length >= 20);
+        }
       }
     } catch {}
     setSearching(false);
   };
 
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      if (query.trim()) {
+        const res = await searchPodcasts(query.trim(), next, 20);
+        const items = res?.data?.results || res?.data?.episodes || [];
+        if (items.length === 0) setHasMore(false);
+        else { setPodcasts(prev => [...prev, ...items]); setPage(next); setHasMore(items.length >= 20); }
+      } else {
+        setHasMore(false);
+      }
+    } catch {} finally { setLoadingMore(false); }
+  }, [page, hasMore, loadingMore, query]);
+
   return (
     <div className="p-4 pb-40">
-      {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-fuchsia-500 to-pink-400 flex items-center justify-center">
           <Headphones className="w-4 h-4 text-white" />
@@ -44,7 +69,6 @@ const PodcastsPage = () => {
         <h1 className="text-lg font-black text-foreground">Podcasts</h1>
       </div>
 
-      {/* Search */}
       <div className="flex items-center bg-secondary/60 border border-border/40 rounded-2xl overflow-hidden mb-6 focus-within:border-primary/30 transition-colors">
         <Search className="w-4 h-4 text-muted-foreground ml-3.5 flex-shrink-0" />
         <input
@@ -102,6 +126,12 @@ const PodcastsPage = () => {
             );
           })}
         </div>
+      )}
+
+      {hasMore && (
+        <button onClick={loadMore} disabled={loadingMore} className="w-full mt-4 py-2.5 card-surface rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 disabled:opacity-50">
+          {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More'}
+        </button>
       )}
     </div>
   );

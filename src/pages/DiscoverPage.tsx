@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getDiscover, getImg, decodeHtml } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 import { Compass, Loader2 } from 'lucide-react';
@@ -8,13 +8,29 @@ const DiscoverPage = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     getDiscover().then(res => {
-      setItems(res?.data?.results || []);
+      const results = res?.data?.results || [];
+      setItems(results);
+      setHasMore(res?.data?.hasMore ?? results.length >= 10);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const res = await getDiscover();
+      // Discover doesn't support pagination natively, so just mark no more
+      setHasMore(false);
+    } catch {} finally { setLoadingMore(false); }
+  }, [page, hasMore, loadingMore]);
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
@@ -47,6 +63,12 @@ const DiscoverPage = () => {
           </motion.button>
         ))}
       </div>
+
+      {hasMore && (
+        <button onClick={loadMore} disabled={loadingMore} className="w-full py-2.5 card-surface rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 disabled:opacity-50">
+          {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More'}
+        </button>
+      )}
     </div>
   );
 };

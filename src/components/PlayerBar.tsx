@@ -36,13 +36,11 @@ const PlayerBar = () => {
 
       <div className="glass-vibrant px-3 pt-2.5 pb-2">
         <div className="flex items-center gap-3">
-          {/* Album art - clean, no heavy shadows */}
+          {/* Album art - no rotation */}
           <div className="relative cursor-pointer" onClick={() => setExpandedOpen(true)}>
-            <motion.img
+            <img
               src={imgUrl}
               alt=""
-              animate={{ rotate: isPlaying ? 360 : 0 }}
-              transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
               className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
             />
             {isPlaying && (

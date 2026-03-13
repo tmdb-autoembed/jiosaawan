@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { getLyrics, getSyncedLyrics, getLyricsById, getImg, getArtistStr, fmtTime } from '@/lib/api';
+import { getLyricsByQuery, getImg, getArtistStr, fmtTime } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mic, MicOff, Loader2, Music2, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowLeft, Mic, MicOff, Loader2, Music2 } from 'lucide-react';
 
 const LyricsPage = () => {
   const { currentSong, currentTime, duration, isPlaying } = usePlayer();
@@ -17,43 +16,45 @@ const LyricsPage = () => {
     setLoading(true);
     setLyrics('');
 
-    // Try lyrics by ID then by query — no sync
-    const idPromise = currentSong.lyricsId
-      ? getLyricsById(currentSong.lyricsId).catch(() => null)
-      : Promise.resolve(null);
-    const fallbackPromise = getLyrics(currentSong).catch(() => null);
+    const songName = currentSong.name || currentSong.title || '';
+    const artist = getArtistStr(currentSong);
+    const query = artist ? `${songName} ${artist}` : songName;
 
-    Promise.all([idPromise, fallbackPromise]).then(([idData, fallbackData]) => {
-      const lyricsData = idData || fallbackData;
+    if (!query.trim()) { setLoading(false); return; }
+
+    getLyricsByQuery(query, 2).then(data => {
       let text = '';
       let cr = '';
-      if (lyricsData?.data) {
-        const d = lyricsData.data;
-        if (typeof d.lyrics === 'string') {
-          text = d.lyrics;
-          cr = d.copyright || '';
-        } else if (d.lyrics && typeof d.lyrics === 'object') {
-          text = d.lyrics.lyrics || '';
-          if (!text && d.lyrics.lyricsHtml) {
-            text = d.lyrics.lyricsHtml.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+      if (data?.data) {
+        const d = data.data;
+        // Could be array of results or single
+        const results = Array.isArray(d) ? d : d.results ? d.results : [d];
+        for (const item of results) {
+          if (item.lyrics) {
+            if (typeof item.lyrics === 'string') {
+              text = item.lyrics;
+              cr = item.copyright || '';
+              break;
+            } else if (typeof item.lyrics === 'object') {
+              text = item.lyrics.lyrics || '';
+              if (!text && item.lyrics.lyricsHtml) {
+                text = item.lyrics.lyricsHtml.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+              }
+              cr = item.lyrics.copyright || '';
+              if (text) break;
+            }
           }
-          if (!text && Array.isArray(d.lyrics.lines)) {
-            text = d.lyrics.lines.map((l: any) => l.text || l.line || '').join('\n');
+          if (item.lyricsHtml) {
+            text = item.lyricsHtml.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+            cr = item.copyright || '';
+            if (text) break;
           }
-          cr = d.lyrics.copyright || '';
         }
-        if (!text && d.lyricsHtml) {
-          text = d.lyricsHtml.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
-        }
-        if (!text && Array.isArray(d.lines)) {
-          text = d.lines.map((l: any) => l.text || l.line || '').join('\n');
-        }
-        if (!cr) cr = d.copyright || '';
       }
       setLyrics(text);
       setCopyright(cr);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [currentSong]);
 
   const imgUrl = currentSong ? getImg(currentSong.image, '500x500') : '';
@@ -102,7 +103,6 @@ const LyricsPage = () => {
           <p className="text-sm text-muted-foreground">Loading lyrics…</p>
         </div>
       ) : lyrics ? (
-        /* Plain Lyrics — always white */
         <div className="card-surface rounded-2xl p-5">
           <pre className="text-sm text-white leading-[2] whitespace-pre-wrap font-sans">
             {lyrics}
