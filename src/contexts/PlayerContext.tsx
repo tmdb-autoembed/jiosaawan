@@ -74,6 +74,19 @@ export const usePlayer = () => {
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Web Audio API refs
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const eqNodesRef = useRef<BiquadFilterNode[]>([]);
+  const bassBoostNodeRef = useRef<BiquadFilterNode | null>(null);
+  const convolverNodeRef = useRef<ConvolverNode | null>(null);
+  const reverbGainRef = useRef<GainNode | null>(null);
+  const dryGainRef = useRef<GainNode | null>(null);
+  const delayNodeRef = useRef<DelayNode | null>(null);
+  const feedbackGainRef = useRef<GainNode | null>(null);
+  const echoGainRef = useRef<GainNode | null>(null);
+
   const [currentSong, setCurrentSong] = useState<any | null>(null);
   const [queue, setQueue] = useState<any[]>([]);
   const [queueIdx, setQueueIdx] = useState(-1);
@@ -112,13 +125,145 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => { localStorage.setItem('audioEffects', JSON.stringify(audioEffects)); }, [audioEffects]);
   useEffect(() => { localStorage.setItem('autoPlay', String(autoPlay)); }, [autoPlay]);
 
-  // Apply playback rate (speed) when effects change
+  // Initialize Web Audio API
+  const initAudioContext = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || audioCtxRef.current) return;
+
+    try {
+      const ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+
+      const source = ctx.createMediaElementSource(audio);
+      sourceNodeRef.current = source;
+
+      // EQ bands: 60Hz, 230Hz, 910Hz, 3.6kHz, 14kHz, 16kHz
+      const freqs = [60, 230, 910, 3600, 14000, 16000];
+      const eqNodes = freqs.map((freq, i) => {
+        const filter = ctx.createBiquadFilter();
+        filter.type = i === 0 ? 'lowshelf' : i === freqs.length - 1 ? 'highshelf' : 'peaking';
+        filter.frequency.value = freq;
+        filter.gain.value = 0;
+        filter.Q.value = 1.4;
+        return filter;
+      });
+      eqNodesRef.current = eqNodes;
+
+      // Bass boost
+      const bassBoost = ctx.createBiquadFilter();
+      bassBoost.type = 'lowshelf';
+      bassBoost.frequency.value = 150;
+      bassBoost.gain.value = 0;
+      bassBoostNodeRef.current = bassBoost;
+
+      // Reverb (convolver with generated impulse)
+      const convolver = ctx.createConvolver();
+      const reverbGain = ctx.createGain();
+      const dryGain = ctx.createGain();
+      reverbGain.gain.value = 0;
+      dryGain.gain.value = 1;
+      
+      // Generate impulse response for reverb
+      const sampleRate = ctx.sampleRate;
+      const length = sampleRate * 2;
+      const impulse = ctx.createBuffer(2, length, sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const data = impulse.getChannelData(ch);
+        for (let i = 0; i < length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
+        }
+      }
+      convolver.buffer = impulse;
+      convolverNodeRef.current = convolver;
+      reverbGainRef.current = reverbGain;
+      dryGainRef.current = dryGain;
+
+      // Echo (delay + feedback)
+      const delay = ctx.createDelay(1.0);
+      delay.delayTime.value = 0.3;
+      const feedbackGain = ctx.createGain();
+      feedbackGain.gain.value = 0;
+      const echoGain = ctx.createGain();
+      echoGain.gain.value = 0;
+      delayNodeRef.current = delay;
+      feedbackGainRef.current = feedbackGain;
+      echoGainRef.current = echoGain;
+
+      const masterGain = ctx.createGain();
+      gainNodeRef.current = masterGain;
+
+      // Chain: source -> eq[0] -> ... -> eq[5] -> bassBoost -> split
+      let lastNode: AudioNode = source;
+      for (const eq of eqNodes) {
+        lastNode.connect(eq);
+        lastNode = eq;
+      }
+      lastNode.connect(bassBoost);
+
+      // Split into dry and reverb paths
+      bassBoost.connect(dryGain);
+      bassBoost.connect(convolver);
+      convolver.connect(reverbGain);
+      dryGain.connect(masterGain);
+      reverbGain.connect(masterGain);
+
+      // Echo path
+      bassBoost.connect(delay);
+      delay.connect(feedbackGain);
+      feedbackGain.connect(delay);
+      delay.connect(echoGain);
+      echoGain.connect(masterGain);
+
+      masterGain.connect(ctx.destination);
+    } catch (e) {
+      console.warn('Web Audio API init failed:', e);
+    }
+  }, []);
+
+  // Apply effects when they change
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) {
       audio.playbackRate = audioEffects.speed;
     }
-  }, [audioEffects.speed]);
+
+    // EQ bands
+    eqNodesRef.current.forEach((node, i) => {
+      if (audioEffects.eqBands[i] !== undefined) {
+        node.gain.value = audioEffects.eqBands[i];
+      }
+    });
+
+    // Bass boost
+    if (bassBoostNodeRef.current) {
+      bassBoostNodeRef.current.gain.value = audioEffects.bassBoost * 0.3;
+    }
+
+    // Reverb
+    if (reverbGainRef.current && dryGainRef.current) {
+      const reverbAmount = audioEffects.reverb / 100;
+      reverbGainRef.current.gain.value = reverbAmount * 0.8;
+      dryGainRef.current.gain.value = 1 - reverbAmount * 0.3;
+    }
+
+    // Pitch (via detune on audio element - preservesPitch false)
+    if (audio) {
+      // Use playbackRate for pitch when pitch != speed
+      // We handle pitch by adjusting preservesPitch
+      (audio as any).preservesPitch = audioEffects.pitch === 1;
+      if (audioEffects.pitch !== 1 && audioEffects.pitch === audioEffects.speed) {
+        // Both same, just let playbackRate handle it
+      }
+    }
+
+    // Echo
+    if (delayNodeRef.current && feedbackGainRef.current && echoGainRef.current) {
+      const echoAmount = audioEffects.echo / 100;
+      feedbackGainRef.current.gain.value = echoAmount * 0.5;
+      echoGainRef.current.gain.value = echoAmount * 0.6;
+      delayNodeRef.current.delayTime.value = 0.15 + echoAmount * 0.35;
+    }
+  }, [audioEffects]);
 
   // Fetch song suggestions and append to queue for infinite playback
   const fetchAndAppendSuggestions = useCallback(async (songId: string) => {
@@ -127,7 +272,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const suggestions = Array.isArray(res?.data) ? res.data : [];
       if (suggestions.length > 0) {
         setQueue(prev => {
-          // Filter out duplicates
           const existingIds = new Set(prev.map((s: any) => s.id));
           const newSongs = suggestions.filter((s: any) => !existingIds.has(s.id));
           if (newSongs.length > 0) {
@@ -137,9 +281,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           return prev;
         });
       }
-    } catch {
-      // silently fail
-    }
+    } catch {}
   }, []);
 
   // Audio events
@@ -149,7 +291,12 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
     const onLoadedMetadata = () => setDuration(audio.duration || 0);
-    const onPlay = () => setIsPlaying(true);
+    const onPlay = () => {
+      setIsPlaying(true);
+      // Init audio context on first play (requires user gesture)
+      if (!audioCtxRef.current) initAudioContext();
+      if (audioCtxRef.current?.state === 'suspended') audioCtxRef.current.resume();
+    };
     const onPause = () => setIsPlaying(false);
     const onEnded = () => {
       if (!repeat) playNextInternal();
@@ -174,18 +321,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('error', onError);
     };
-  }, [repeat, shuffle, queue]);
+  }, [repeat, shuffle, queue, initAudioContext]);
 
   const playNextInternal = useCallback(() => {
     if (queue.length === 0) return;
-    
     const isLastSong = queueIdx >= queue.length - 1;
-    
-    // If at end of queue and autoPlay is on, fetch suggestions
     if (isLastSong && autoPlay && currentSong?.id) {
       fetchAndAppendSuggestions(currentSong.id);
     }
-    
     let nextIdx: number;
     if (shuffle) {
       nextIdx = Math.floor(Math.random() * queue.length);
@@ -264,12 +407,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (audio) { audio.currentTime = 0; audio.play(); }
       return;
     }
-    
     const isLastSong = queueIdx >= queue.length - 1;
     if (isLastSong && autoPlay && currentSong?.id) {
       fetchAndAppendSuggestions(currentSong.id);
     }
-    
     let nextIdx: number;
     if (shuffle) nextIdx = Math.floor(Math.random() * queue.length);
     else nextIdx = (queueIdx + 1) % queue.length;
@@ -422,7 +563,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setExpandedOpen, setQueueOpen, stopPlayer, setAudioEffects, toggleAutoPlay,
     }}>
       {children}
-      <audio ref={audioRef} preload="metadata" />
+      <audio ref={audioRef} preload="metadata" crossOrigin="anonymous" />
     </PlayerContext.Provider>
   );
 };

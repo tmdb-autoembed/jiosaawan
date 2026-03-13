@@ -76,15 +76,12 @@
 }
 
 @layer utilities {
+  /* No backdrop blur - removed for performance */
   .glass {
-    background: hsla(250, 20%, 6%, 0.92);
-    backdrop-filter: blur(28px) saturate(1.4);
-    -webkit-backdrop-filter: blur(28px) saturate(1.4);
+    background: hsla(250, 20%, 6%, 0.96);
   }
   .glass-vibrant {
-    background: linear-gradient(135deg, hsla(250, 20%, 8%, 0.9), hsla(250, 18%, 5%, 0.95));
-    backdrop-filter: blur(32px) saturate(1.5);
-    -webkit-backdrop-filter: blur(32px) saturate(1.5);
+    background: linear-gradient(135deg, hsla(250, 20%, 8%, 0.96), hsla(250, 18%, 5%, 0.98));
   }
   .card-surface {
     background: linear-gradient(145deg, hsla(250, 18%, 10%, 0.95), hsla(250, 18%, 6%, 0.98));
@@ -246,14 +243,6 @@
   animation: vinyl-spin 6s linear infinite;
 }
 
-@keyframes play-pulse {
-  0%, 100% { box-shadow: 0 0 15px hsla(25, 100%, 60%, 0.3); }
-  50% { box-shadow: 0 0 40px hsla(25, 100%, 60%, 0.5), 0 0 60px hsla(340, 85%, 58%, 0.2); }
-}
-.animate-play-pulse {
-  animation: play-pulse 2s ease-in-out infinite;
-}
-
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -275,14 +264,6 @@
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
-}
-
-@keyframes lyric-glow {
-  0%, 100% { text-shadow: 0 0 10px hsla(25, 100%, 60%, 0.4); }
-  50% { text-shadow: 0 0 25px hsla(25, 100%, 60%, 0.7), 0 0 40px hsla(340, 85%, 58%, 0.3); }
-}
-.animate-lyric-glow {
-  animation: lyric-glow 2s ease-in-out infinite;
 }
 
 @keyframes gradient-shift {

@@ -113,7 +113,7 @@ const ExpandedPlayer = () => {
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
       className="fixed inset-0 z-[500] flex flex-col overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, hsl(250 20% 6%) 0%, hsl(250 22% 4%) 50%, hsl(25 15% 5%) 100%)',
+        background: 'linear-gradient(180deg, hsl(250 20% 8%) 0%, hsl(340 30% 8%) 40%, hsl(25 30% 6%) 70%, hsl(250 22% 4%) 100%)',
       }}
     >
       <div className="relative flex-1 flex flex-col items-center px-6 pt-5 pb-4 overflow-y-auto">
@@ -125,7 +125,7 @@ const ExpandedPlayer = () => {
           <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Now Playing</span>
           <button
             onClick={() => setShowEqualizer(!showEqualizer)}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${showEqualizer ? 'bg-gradient-primary text-primary-foreground' : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'}`}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${showEqualizer ? 'bg-primary text-primary-foreground' : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'}`}
           >
             <Sliders className="w-4 h-4" />
           </button>
@@ -138,13 +138,20 @@ const ExpandedPlayer = () => {
             </motion.div>
           ) : (
             <motion.div key="player" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full flex flex-col items-center">
-              {/* Album Art - Clean, no heavy shadows */}
+              {/* Album Art - No rotation, rainbow wave ring around */}
               <div className="relative mb-8">
-                <motion.img
+                {/* Rainbow wave ring */}
+                {isPlaying && (
+                  <div className="absolute -inset-3 rounded-full animate-gradient" style={{
+                    background: 'conic-gradient(hsl(0,90%,60%), hsl(45,95%,55%), hsl(120,80%,50%), hsl(200,90%,55%), hsl(280,70%,55%), hsl(340,85%,58%), hsl(0,90%,60%))',
+                    backgroundSize: '200% 200%',
+                    opacity: 0.5,
+                    filter: 'blur(8px)',
+                  }} />
+                )}
+                <img
                   src={imgUrl}
                   alt=""
-                  animate={{ rotate: isPlaying ? 360 : 0 }}
-                  transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
                   className="relative w-56 h-56 rounded-full object-cover border-[3px] border-primary/15"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -174,7 +181,7 @@ const ExpandedPlayer = () => {
                 </div>
               </div>
 
-              {/* Controls - brighter white icons */}
+              {/* Controls */}
               <div className="flex items-center justify-center gap-5 my-4 w-full">
                 <button onClick={toggleShuffle} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${shuffle ? 'bg-primary text-primary-foreground' : 'bg-secondary/20 text-foreground/80'}`}>
                   <Shuffle className="w-4.5 h-4.5" />
