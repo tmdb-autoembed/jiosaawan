@@ -88,13 +88,13 @@ const Equalizer = () => {
       <div className="flex gap-2 mb-5">
         <button
           onClick={() => setActiveTab('eq')}
-          className={`flex-1 py-2.5 rounded-xl font-semibold text-xs transition-all ${activeTab === 'eq' ? 'bg-gradient-primary text-primary-foreground shadow-lg glow-primary' : 'bg-secondary/30 text-muted-foreground'}`}
+          className={`flex-1 py-2.5 rounded-xl font-semibold text-xs transition-all ${activeTab === 'eq' ? 'bg-primary text-primary-foreground' : 'bg-secondary/30 text-muted-foreground'}`}
         >
           <Music2 className="w-3.5 h-3.5 inline mr-1.5" /> Equalizer
         </button>
         <button
           onClick={() => setActiveTab('effects')}
-          className={`flex-1 py-2.5 rounded-xl font-semibold text-xs transition-all ${activeTab === 'effects' ? 'bg-gradient-cool text-white shadow-lg glow-teal' : 'bg-secondary/30 text-muted-foreground'}`}
+          className={`flex-1 py-2.5 rounded-xl font-semibold text-xs transition-all ${activeTab === 'effects' ? 'bg-primary text-primary-foreground' : 'bg-secondary/30 text-muted-foreground'}`}
         >
           <Zap className="w-3.5 h-3.5 inline mr-1.5" /> Effects
         </button>
@@ -111,7 +111,7 @@ const Equalizer = () => {
                   key={preset}
                   onClick={() => applyPreset(preset)}
                   className={`px-3 py-1.5 rounded-full text-[10px] font-semibold capitalize transition-all ${
-                    activePreset === preset ? 'bg-gradient-primary text-primary-foreground shadow-md' : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'
+                    activePreset === preset ? 'bg-primary text-primary-foreground' : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'
                   }`}
                 >
                   {preset}
@@ -120,13 +120,13 @@ const Equalizer = () => {
             </div>
           </div>
 
-          {/* 6-Band EQ */}
+          {/* 6-Band EQ - Vertical sliders */}
           <div className="card-surface rounded-2xl p-4 mb-4">
             <div className="flex justify-between items-end gap-3 h-44">
               {bands.map((band, index) => (
                 <div key={index} className="flex-1 flex flex-col items-center gap-1.5">
                   <div className="h-28 flex flex-col items-center justify-end relative">
-                    <div className="w-3 rounded-full shadow-lg transition-all"
+                    <div className="w-3 rounded-full transition-all"
                       style={{
                         height: `${Math.max(10, ((band.gain + 12) / 24) * 100)}%`,
                         background: `linear-gradient(to top, ${barColors[index]}, ${barColors[index]}88)`,
@@ -147,10 +147,10 @@ const Equalizer = () => {
             </div>
           </div>
 
-          {/* Bass Boost */}
+          {/* Bass Boost - Vertical */}
           <div className="card-surface rounded-2xl p-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg" style={{ background: 'var(--gradient-primary)' }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary">
                 <Volume2 className="w-4 h-4 text-primary-foreground" />
               </div>
               <div className="flex-1">
@@ -169,7 +169,7 @@ const Equalizer = () => {
           {effectSliders.map(({ label, value, set, max = 100, min = 0, step = 5, icon: Icon, color, display }) => (
             <div key={label} className="card-surface rounded-2xl p-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg" style={{ background: color }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: color }}>
                   <Icon className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1">

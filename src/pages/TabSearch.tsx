@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   searchSongs, searchAlbums, searchArtists, searchPlaylists, searchPodcasts,
-  getTrending,
+  getTrendingSongs, getTrendingAlbums, getTrendingArtists, getTrendingPlaylists, getTrendingPodcasts,
   extractResults,
 } from '@/lib/api';
 import SongItem from '@/components/SongItem';
@@ -15,6 +15,14 @@ const fetchFnMap: Record<string, (q: string, l: number, p: number) => Promise<an
   artists: searchArtists,
   playlists: searchPlaylists,
   podcasts: searchPodcasts as any,
+};
+
+const trendingFnMap: Record<string, () => Promise<any>> = {
+  songs: getTrendingSongs,
+  albums: getTrendingAlbums,
+  artists: getTrendingArtists,
+  playlists: getTrendingPlaylists,
+  podcasts: getTrendingPodcasts,
 };
 
 const sectionMeta: Record<string, { icon: any; label: string; emoji: string }> = {
@@ -51,19 +59,20 @@ const TabSearch = ({ type }: { type: string }) => {
         setHasMore(r.length >= 20);
       }).catch(() => {}).finally(() => setLoading(false));
     } else {
-      // Trending mode — no pagination on trending endpoints
+      // Show popular/trending content by default
       setIsTrending(true);
-      getTrending().then(data => {
+      const trendingFn = trendingFnMap[type];
+      if (!trendingFn) { setLoading(false); return; }
+      trendingFn().then(data => {
         let r: any[] = [];
         if (data?.data) {
-          if (type === 'songs') {
-            r = data.data.songs?.results || [];
-          } else {
-            r = data.data[type]?.results || [];
-          }
+          if (Array.isArray(data.data)) r = data.data;
+          else if (data.data.results) r = data.data.results;
+          else if (data.data.songs) r = Array.isArray(data.data.songs) ? data.data.songs : (data.data.songs.results || []);
+          else r = Object.values(data.data).flat().filter((x: any) => x && typeof x === 'object');
         }
         setResults(r);
-        setHasMore(false); // Trending has no pagination
+        setHasMore(false);
       }).catch(() => {}).finally(() => setLoading(false));
     }
   }, [type, q]);
@@ -107,7 +116,7 @@ const TabSearch = ({ type }: { type: string }) => {
   return (
     <div className="p-4 pb-40 space-y-4">
       <div className="flex items-center gap-2.5 mb-2">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
           <Icon className="w-4 h-4 text-white" />
         </div>
         <h2 className="text-base font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{heading}</h2>
@@ -137,9 +146,9 @@ const TabSearch = ({ type }: { type: string }) => {
         <button
           onClick={loadMore}
           disabled={loadingMore}
-          className="w-full mt-3 py-2.5 btn-3d-glass rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 disabled:opacity-50"
+          className="w-full mt-3 py-2.5 rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 disabled:opacity-50 bg-secondary/20 hover:bg-secondary/30 transition-all"
         >
-          {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : `Load More`}
+          {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More'}
         </button>
       )}
     </div>
