@@ -22,7 +22,7 @@ const LyricsPage = () => {
 
     if (!query.trim()) { setLoading(false); return; }
 
-    getLyricsByQuery(query, 2).then(data => {
+    getLyricsByQuery(query, 5).then(data => {
       let text = '';
       let cr = '';
       if (data?.data) {

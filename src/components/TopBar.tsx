@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, X, Home, Music, Disc3, Star, ListMusic, User, Radio, Headphones, BarChart3, Heart, Compass, Layers } from 'lucide-react';
+import { Search, X, Home, Music, Disc3, Star, ListMusic, User, Radio, Headphones, BarChart3 } from 'lucide-react';
 
 const tabs = [
   { id: 'home', label: 'Home', icon: Home, path: '/' },
@@ -10,9 +10,6 @@ const tabs = [
   { id: 'playlists', label: 'Playlists', icon: ListMusic, path: '/search/playlists' },
   { id: 'charts', label: 'Charts', icon: BarChart3, path: '/charts' },
   { id: 'radio', label: 'Radio', icon: Radio, path: '/radio' },
-  { id: 'moods', label: 'Moods', icon: Heart, path: '/moods' },
-  { id: 'genres', label: 'Genres', icon: Layers, path: '/genres' },
-  { id: 'discover', label: 'Discover', icon: Compass, path: '/discover' },
   { id: 'podcasts', label: 'Podcasts', icon: Headphones, path: '/podcasts' },
   { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
@@ -38,9 +35,6 @@ const TopBar = () => {
     if (p === '/profile') return 'profile';
     if (p === '/charts') return 'charts';
     if (p === '/radio' || p.startsWith('/radio/')) return 'radio';
-    if (p === '/moods') return 'moods';
-    if (p === '/genres') return 'genres';
-    if (p === '/discover') return 'discover';
     if (p === '/podcasts' || p.startsWith('/podcast/')) return 'podcasts';
     if (p.startsWith('/search/podcasts')) return 'podcasts';
     if (p.startsWith('/search/songs')) return 'songs';

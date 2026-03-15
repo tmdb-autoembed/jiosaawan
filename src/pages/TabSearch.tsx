@@ -17,7 +17,7 @@ const fetchFnMap: Record<string, (q: string, l: number, p: number) => Promise<an
   podcasts: searchPodcasts as any,
 };
 
-const trendingFnMap: Record<string, () => Promise<any>> = {
+const trendingFnMap: Record<string, (page?: number) => Promise<any>> = {
   songs: getTrendingSongs,
   albums: getTrendingAlbums,
   artists: getTrendingArtists,
@@ -32,6 +32,15 @@ const sectionMeta: Record<string, { icon: any; label: string; emoji: string }> =
   playlists: { icon: ListMusic, label: 'Popular Playlists', emoji: '🎵' },
   podcasts: { icon: Radio, label: 'Trending Podcasts', emoji: '🎙️' },
 };
+
+function extractTrendingResults(data: any): any[] {
+  if (!data?.data) return [];
+  const d = data.data;
+  if (Array.isArray(d)) return d;
+  if (d.results) return d.results;
+  if (d.songs) return Array.isArray(d.songs) ? d.songs : (d.songs.results || []);
+  return Object.values(d).flat().filter((x: any) => x && typeof x === 'object');
+}
 
 const TabSearch = ({ type }: { type: string }) => {
   const [params] = useSearchParams();
@@ -59,38 +68,44 @@ const TabSearch = ({ type }: { type: string }) => {
         setHasMore(r.length >= 20);
       }).catch(() => {}).finally(() => setLoading(false));
     } else {
-      // Show popular/trending content by default
       setIsTrending(true);
       const trendingFn = trendingFnMap[type];
       if (!trendingFn) { setLoading(false); return; }
-      trendingFn().then(data => {
-        let r: any[] = [];
-        if (data?.data) {
-          if (Array.isArray(data.data)) r = data.data;
-          else if (data.data.results) r = data.data.results;
-          else if (data.data.songs) r = Array.isArray(data.data.songs) ? data.data.songs : (data.data.songs.results || []);
-          else r = Object.values(data.data).flat().filter((x: any) => x && typeof x === 'object');
-        }
+      trendingFn(1).then(data => {
+        const r = extractTrendingResults(data);
         setResults(r);
-        setHasMore(false);
+        setHasMore(r.length >= 10);
       }).catch(() => {}).finally(() => setLoading(false));
     }
   }, [type, q]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore || isTrending) return;
+    if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
-      const fn = fetchFnMap[type];
-      if (!fn) { setHasMore(false); setLoadingMore(false); return; }
-      const data = await fn(q, 20, nextPage);
-      const r = extractResults(data);
-      if (r.length === 0) { setHasMore(false); }
-      else {
-        setResults(prev => [...prev, ...r]);
-        setPage(nextPage);
-        setHasMore(r.length >= 20);
+      if (isTrending) {
+        const trendingFn = trendingFnMap[type];
+        if (!trendingFn) { setHasMore(false); setLoadingMore(false); return; }
+        const data = await trendingFn(nextPage);
+        const r = extractTrendingResults(data);
+        if (r.length === 0) { setHasMore(false); }
+        else {
+          setResults(prev => [...prev, ...r]);
+          setPage(nextPage);
+          setHasMore(r.length >= 10);
+        }
+      } else {
+        const fn = fetchFnMap[type];
+        if (!fn) { setHasMore(false); setLoadingMore(false); return; }
+        const data = await fn(q, 20, nextPage);
+        const r = extractResults(data);
+        if (r.length === 0) { setHasMore(false); }
+        else {
+          setResults(prev => [...prev, ...r]);
+          setPage(nextPage);
+          setHasMore(r.length >= 20);
+        }
       }
     } catch {} finally { setLoadingMore(false); }
   }, [page, hasMore, loadingMore, isTrending, type, q]);
