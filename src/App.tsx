@@ -22,7 +22,7 @@ import ChartsPage from "./pages/ChartsPage";
 import RadioPage from "./pages/RadioPage";
 import RadioDetail from "./pages/RadioDetail";
 import ChannelDetail from "./pages/ChannelDetail";
-import DiscoverPage from "./pages/DiscoverPage";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
