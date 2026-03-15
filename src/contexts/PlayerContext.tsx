@@ -9,6 +9,7 @@ interface AudioEffects {
   pitch: number;
   speed: number;
   echo: number;
+  enabled: boolean;
 }
 
 interface PlayerState {
@@ -52,6 +53,7 @@ interface PlayerContextType extends PlayerState {
   stopPlayer: () => void;
   setAudioEffects: (effects: AudioEffects) => void;
   toggleAutoPlay: () => void;
+  toggleEqualizer: () => void;
 }
 
 const DEFAULT_EFFECTS: AudioEffects = {
@@ -61,6 +63,7 @@ const DEFAULT_EFFECTS: AudioEffects = {
   pitch: 1,
   speed: 1,
   echo: 0,
+  enabled: false,
 };
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
@@ -86,6 +89,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const delayNodeRef = useRef<DelayNode | null>(null);
   const feedbackGainRef = useRef<GainNode | null>(null);
   const echoGainRef = useRef<GainNode | null>(null);
+  const bypassNodeRef = useRef<GainNode | null>(null);
+  const effectsOutputRef = useRef<GainNode | null>(null);
 
   const [currentSong, setCurrentSong] = useState<any | null>(null);
   const [queue, setQueue] = useState<any[]>([]);
@@ -104,7 +109,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [audioEffects, setAudioEffectsState] = useState<AudioEffects>(() => {
     try { 
       const saved = localStorage.getItem('audioEffects');
-      return saved ? JSON.parse(saved) : DEFAULT_EFFECTS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_EFFECTS, ...parsed };
+      }
+      return DEFAULT_EFFECTS;
     } catch { return DEFAULT_EFFECTS; }
   });
 
@@ -137,6 +146,16 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const source = ctx.createMediaElementSource(audio);
       sourceNodeRef.current = source;
 
+      // Bypass path (clean audio)
+      const bypassGain = ctx.createGain();
+      bypassGain.gain.value = 1;
+      bypassNodeRef.current = bypassGain;
+
+      // Effects output
+      const effectsOutput = ctx.createGain();
+      effectsOutput.gain.value = 0;
+      effectsOutputRef.current = effectsOutput;
+
       // EQ bands: 60Hz, 230Hz, 910Hz, 3.6kHz, 14kHz, 16kHz
       const freqs = [60, 230, 910, 3600, 14000, 16000];
       const eqNodes = freqs.map((freq, i) => {
@@ -144,7 +163,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         filter.type = i === 0 ? 'lowshelf' : i === freqs.length - 1 ? 'highshelf' : 'peaking';
         filter.frequency.value = freq;
         filter.gain.value = 0;
-        filter.Q.value = 1.4;
+        filter.Q.value = 1.0;
         return filter;
       });
       eqNodesRef.current = eqNodes;
@@ -163,14 +182,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       reverbGain.gain.value = 0;
       dryGain.gain.value = 1;
       
-      // Generate impulse response for reverb
+      // Generate smoother impulse response for reverb (less noise)
       const sampleRate = ctx.sampleRate;
       const length = sampleRate * 2;
       const impulse = ctx.createBuffer(2, length, sampleRate);
       for (let ch = 0; ch < 2; ch++) {
         const data = impulse.getChannelData(ch);
         for (let i = 0; i < length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
+          // Smoother decay with less noise
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3.5) * 0.5;
         }
       }
       convolver.buffer = impulse;
@@ -192,7 +212,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const masterGain = ctx.createGain();
       gainNodeRef.current = masterGain;
 
-      // Chain: source -> eq[0] -> ... -> eq[5] -> bassBoost -> split
+      // Bypass path: source -> bypassGain -> masterGain
+      source.connect(bypassGain);
+      bypassGain.connect(masterGain);
+
+      // Effects path: source -> eq chain -> bassBoost -> dry/reverb/echo -> effectsOutput -> masterGain
       let lastNode: AudioNode = source;
       for (const eq of eqNodes) {
         lastNode.connect(eq);
@@ -204,17 +228,27 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       bassBoost.connect(dryGain);
       bassBoost.connect(convolver);
       convolver.connect(reverbGain);
-      dryGain.connect(masterGain);
-      reverbGain.connect(masterGain);
+      dryGain.connect(effectsOutput);
+      reverbGain.connect(effectsOutput);
 
       // Echo path
       bassBoost.connect(delay);
       delay.connect(feedbackGain);
       feedbackGain.connect(delay);
       delay.connect(echoGain);
-      echoGain.connect(masterGain);
+      echoGain.connect(effectsOutput);
 
+      effectsOutput.connect(masterGain);
       masterGain.connect(ctx.destination);
+
+      // Set initial bypass state
+      if (audioEffects.enabled) {
+        bypassGain.gain.value = 0;
+        effectsOutput.gain.value = 1;
+      } else {
+        bypassGain.gain.value = 1;
+        effectsOutput.gain.value = 0;
+      }
     } catch (e) {
       console.warn('Web Audio API init failed:', e);
     }
@@ -227,41 +261,53 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       audio.playbackRate = audioEffects.speed;
     }
 
+    // Toggle bypass vs effects
+    if (bypassNodeRef.current && effectsOutputRef.current) {
+      if (audioEffects.enabled) {
+        bypassNodeRef.current.gain.setTargetAtTime(0, audioCtxRef.current?.currentTime || 0, 0.05);
+        effectsOutputRef.current.gain.setTargetAtTime(1, audioCtxRef.current?.currentTime || 0, 0.05);
+      } else {
+        bypassNodeRef.current.gain.setTargetAtTime(1, audioCtxRef.current?.currentTime || 0, 0.05);
+        effectsOutputRef.current.gain.setTargetAtTime(0, audioCtxRef.current?.currentTime || 0, 0.05);
+      }
+    }
+
+    if (!audioEffects.enabled) return;
+
     // EQ bands
     eqNodesRef.current.forEach((node, i) => {
       if (audioEffects.eqBands[i] !== undefined) {
-        node.gain.value = audioEffects.eqBands[i];
+        const t = audioCtxRef.current?.currentTime || 0;
+        node.gain.setTargetAtTime(audioEffects.eqBands[i], t, 0.05);
       }
     });
 
     // Bass boost
     if (bassBoostNodeRef.current) {
-      bassBoostNodeRef.current.gain.value = audioEffects.bassBoost * 0.3;
+      const t = audioCtxRef.current?.currentTime || 0;
+      bassBoostNodeRef.current.gain.setTargetAtTime(audioEffects.bassBoost * 0.25, t, 0.05);
     }
 
     // Reverb
     if (reverbGainRef.current && dryGainRef.current) {
       const reverbAmount = audioEffects.reverb / 100;
-      reverbGainRef.current.gain.value = reverbAmount * 0.8;
-      dryGainRef.current.gain.value = 1 - reverbAmount * 0.3;
+      const t = audioCtxRef.current?.currentTime || 0;
+      reverbGainRef.current.gain.setTargetAtTime(reverbAmount * 0.6, t, 0.05);
+      dryGainRef.current.gain.setTargetAtTime(1 - reverbAmount * 0.2, t, 0.05);
     }
 
-    // Pitch (via detune on audio element - preservesPitch false)
+    // Pitch
     if (audio) {
-      // Use playbackRate for pitch when pitch != speed
-      // We handle pitch by adjusting preservesPitch
       (audio as any).preservesPitch = audioEffects.pitch === 1;
-      if (audioEffects.pitch !== 1 && audioEffects.pitch === audioEffects.speed) {
-        // Both same, just let playbackRate handle it
-      }
     }
 
     // Echo
     if (delayNodeRef.current && feedbackGainRef.current && echoGainRef.current) {
       const echoAmount = audioEffects.echo / 100;
-      feedbackGainRef.current.gain.value = echoAmount * 0.5;
-      echoGainRef.current.gain.value = echoAmount * 0.6;
-      delayNodeRef.current.delayTime.value = 0.15 + echoAmount * 0.35;
+      const t = audioCtxRef.current?.currentTime || 0;
+      feedbackGainRef.current.gain.setTargetAtTime(echoAmount * 0.4, t, 0.05);
+      echoGainRef.current.gain.setTargetAtTime(echoAmount * 0.5, t, 0.05);
+      delayNodeRef.current.delayTime.setTargetAtTime(0.2 + echoAmount * 0.3, t, 0.05);
     }
   }, [audioEffects]);
 
@@ -293,7 +339,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const onLoadedMetadata = () => setDuration(audio.duration || 0);
     const onPlay = () => {
       setIsPlaying(true);
-      // Init audio context on first play (requires user gesture)
       if (!audioCtxRef.current) initAudioContext();
       if (audioCtxRef.current?.state === 'suspended') audioCtxRef.current.resume();
     };
@@ -504,6 +549,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setAudioEffectsState(effects);
   }, []);
 
+  const toggleEqualizer = useCallback(() => {
+    setAudioEffectsState(prev => {
+      const next = { ...prev, enabled: !prev.enabled };
+      toast.info(next.enabled ? '🎛️ Equalizer ON' : '🎛️ Equalizer OFF');
+      return next;
+    });
+  }, []);
+
   const toggleAutoPlay = useCallback(() => {
     setAutoPlay(p => {
       toast.info(!p ? '♾️ Auto-play on — similar songs will play next' : 'Auto-play off');
@@ -561,6 +614,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       toggleShuffle, toggleRepeat, setVolume, seek, toggleLike, isLiked,
       savePlaylist, unsavePlaylist, isPlaylistSaved, setQuality,
       setExpandedOpen, setQueueOpen, stopPlayer, setAudioEffects, toggleAutoPlay,
+      toggleEqualizer,
     }}>
       {children}
       <audio ref={audioRef} preload="metadata" crossOrigin="anonymous" />

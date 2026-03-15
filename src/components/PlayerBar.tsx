@@ -1,7 +1,7 @@
 import { usePlayer } from '@/contexts/PlayerContext';
 import { getImg, getArtistStr, fmtTime, decodeHtml } from '@/lib/api';
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, X } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, PanInfo } from 'framer-motion';
 import WaveBars from './WaveBars';
 
 const PlayerBar = () => {
@@ -23,6 +23,13 @@ const PlayerBar = () => {
     seek(p * (duration || 0));
   };
 
+  // Slide down slightly to expand
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    if (info.offset.y < -20) {
+      setExpandedOpen(true);
+    }
+  };
+
   return (
     <motion.div
       initial={{ y: 100, opacity: 0 }}
@@ -34,9 +41,15 @@ const PlayerBar = () => {
         <motion.div className="h-full bg-primary" style={{ width: `${pct}%` }} />
       </div>
 
-      <div className="glass-vibrant px-3 pt-2.5 pb-2">
+      <motion.div
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={0.3}
+        onDragEnd={handleDragEnd}
+        className="bg-background/95 border-t border-border/10 px-3 pt-2.5 pb-2"
+      >
         <div className="flex items-center gap-3">
-          {/* Album art - no rotation */}
+          {/* Album art */}
           <div className="relative cursor-pointer" onClick={() => setExpandedOpen(true)}>
             <img
               src={imgUrl}
@@ -56,7 +69,7 @@ const PlayerBar = () => {
             <p className="text-[11px] text-muted-foreground truncate">{getArtistStr(currentSong)}</p>
           </div>
 
-          {/* Controls - bright white icons */}
+          {/* Controls */}
           <div className="flex items-center gap-0.5">
             <button onClick={toggleShuffle} className={`p-1.5 rounded-full transition-all ${shuffle ? 'text-primary' : 'text-foreground/80'}`}>
               <Shuffle className="w-3.5 h-3.5" />
@@ -88,7 +101,7 @@ const PlayerBar = () => {
           <span>{fmtTime(currentTime)}</span>
           <span>{fmtTime(duration)}</span>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 };
