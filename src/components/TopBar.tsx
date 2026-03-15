@@ -35,9 +35,6 @@ const TopBar = () => {
     if (p === '/profile') return 'profile';
     if (p === '/charts') return 'charts';
     if (p === '/radio' || p.startsWith('/radio/')) return 'radio';
-    if (p === '/moods') return 'moods';
-    if (p === '/genres') return 'genres';
-    if (p === '/discover') return 'discover';
     if (p === '/podcasts' || p.startsWith('/podcast/')) return 'podcasts';
     if (p.startsWith('/search/podcasts')) return 'podcasts';
     if (p.startsWith('/search/songs')) return 'songs';

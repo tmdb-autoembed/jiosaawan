@@ -185,24 +185,24 @@ export async function getRelatedArtists(id: string) {
   return fetchJson(`${API}/artists/${id}/related`);
 }
 
-// ===================== TRENDING (6) — NO params =====================
-export async function getTrending() {
-  return fetchJson(`${API}/trending`);
+// ===================== TRENDING (6) =====================
+export async function getTrending(page = 1) {
+  return fetchJson(`${API}/trending?page=${page}`);
 }
-export async function getTrendingSongs() {
-  return fetchJson(`${API}/trending/songs`);
+export async function getTrendingSongs(page = 1) {
+  return fetchJson(`${API}/trending/songs?page=${page}`);
 }
-export async function getTrendingAlbums() {
-  return fetchJson(`${API}/trending/albums`);
+export async function getTrendingAlbums(page = 1) {
+  return fetchJson(`${API}/trending/albums?page=${page}`);
 }
-export async function getTrendingPlaylists() {
-  return fetchJson(`${API}/trending/playlists`);
+export async function getTrendingPlaylists(page = 1) {
+  return fetchJson(`${API}/trending/playlists?page=${page}`);
 }
-export async function getTrendingArtists() {
-  return fetchJson(`${API}/trending/artists`);
+export async function getTrendingArtists(page = 1) {
+  return fetchJson(`${API}/trending/artists?page=${page}`);
 }
-export async function getTrendingPodcasts() {
-  return fetchJson(`${API}/trending/podcasts`);
+export async function getTrendingPodcasts(page = 1) {
+  return fetchJson(`${API}/trending/podcasts?page=${page}`);
 }
 
 // ===================== HOME (5) =====================

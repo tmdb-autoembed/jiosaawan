@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { getImg, getArtistStr, fmtTime, getUrlForQuality, getAudioUrl, getSongShareLink, getSongRingtone, decodeHtml } from '@/lib/api';
-import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Share2, Heart, Download, Sliders, Bell, Infinity as InfinityIcon } from 'lucide-react';
+import { getImg, getArtistStr, fmtTime, getUrlForQuality, getAudioUrl, getSongRingtone, decodeHtml } from '@/lib/api';
+import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Heart, Download, Sliders, Bell, Infinity as InfinityIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import Equalizer from './Equalizer';
-import WaveBars from './WaveBars';
 
 const QUALITY_OPTIONS = [
   { value: '96kbps', label: 'Low' },
@@ -36,22 +35,6 @@ const ExpandedPlayer = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     const p = (e.clientX - rect.left) / rect.width;
     seek(p * (duration || 0));
-  };
-
-  const handleShare = async () => {
-    try {
-      const res = await getSongShareLink(currentSong.id);
-      const shareUrl = res?.data?.shareUrl || res?.data?.url || window.location.href;
-      const title = currentSong.name || currentSong.title || 'Unknown';
-      const artist = getArtistStr(currentSong);
-      if (navigator.share) {
-        navigator.share({ title, text: `🎵 ${title} — ${artist}`, url: shareUrl }).catch(() => {});
-      } else {
-        navigator.clipboard?.writeText(shareUrl).then(() => toast.success('Link copied! 🔗'));
-      }
-    } catch {
-      navigator.clipboard?.writeText(window.location.href).then(() => toast.success('Link copied!'));
-    }
   };
 
   const handleRingtone = async () => {
@@ -100,7 +83,6 @@ const ExpandedPlayer = () => {
   const actions = [
     { icon: Mic, action: handleLyrics, label: 'Lyrics', active: false },
     { icon: ListOrdered, action: () => setQueueOpen(true), label: 'Queue', active: false },
-    { icon: Share2, action: handleShare, label: 'Share', active: false },
     { icon: Heart, action: () => toggleLike(currentSong), label: 'Like', active: liked },
     { icon: Bell, action: handleRingtone, label: 'Ringtone', active: false },
   ];
@@ -138,30 +120,14 @@ const ExpandedPlayer = () => {
             </motion.div>
           ) : (
             <motion.div key="player" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full flex flex-col items-center">
-              {/* Album Art - No rotation, rainbow wave ring around */}
+              {/* Album Art - simple rotating disc */}
               <div className="relative mb-8">
-                {/* Rainbow wave ring */}
-                {isPlaying && (
-                  <div className="absolute -inset-3 rounded-full animate-gradient" style={{
-                    background: 'conic-gradient(hsl(0,90%,60%), hsl(45,95%,55%), hsl(120,80%,50%), hsl(200,90%,55%), hsl(280,70%,55%), hsl(340,85%,58%), hsl(0,90%,60%))',
-                    backgroundSize: '200% 200%',
-                    opacity: 0.5,
-                    filter: 'blur(8px)',
-                  }} />
-                )}
                 <img
                   src={imgUrl}
                   alt=""
-                  className="relative w-56 h-56 rounded-full object-cover border-[3px] border-primary/15"
+                  className={`w-56 h-56 rounded-full object-cover border-[3px] border-secondary/30 ${isPlaying ? 'animate-spin' : ''}`}
+                  style={{ animationDuration: '8s' }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-background/80 border-[3px] border-secondary/40" />
-                </div>
-                {isPlaying && (
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
-                    <WaveBars />
-                  </div>
-                )}
               </div>
 
               {/* Title */}

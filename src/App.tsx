@@ -54,7 +54,7 @@ const App = () => (
                 <Route path="/radio" element={<RadioPage />} />
                 <Route path="/radio/:id" element={<RadioDetail />} />
                 <Route path="/channel/:id" element={<ChannelDetail />} />
-                <Route path="/discover" element={<DiscoverPage />} />
+                
                 <Route path="/lyrics" element={<LyricsPage />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="*" element={<NotFound />} />
