@@ -216,6 +216,9 @@ const Index = () => {
         </div>
       </motion.div>
 
+      {/* Hindi Hits Section */}
+      <HindiSongsSection />
+
       {/* All main sections */}
       {sections.map((s, i) => renderSection(s.key, s.title, s.items, s.renderType, s.seeAll, i))}
 
