@@ -43,7 +43,7 @@ const Equalizer = () => {
   const [echo, setEcho] = useState(audioEffects?.echo || 0);
 
   useEffect(() => {
-    setAudioEffects({ eqBands: bands.map(b => b.gain), bassBoost, reverb, pitch, speed, echo });
+    setAudioEffects({ eqBands: bands.map(b => b.gain), bassBoost, reverb, pitch, speed, echo, enabled: audioEffects?.enabled ?? false });
   }, [bands, bassBoost, reverb, pitch, speed, echo]);
 
   const handleBandChange = (index: number, value: number[]) => {
