@@ -51,8 +51,6 @@ const App = () => (
                 <Route path="/podcasts" element={<PodcastsPage />} />
                 <Route path="/podcast/:id" element={<PodcastDetail />} />
                 <Route path="/charts" element={<ChartsPage />} />
-                <Route path="/genres" element={<GenresPage />} />
-                <Route path="/moods" element={<MoodsPage />} />
                 <Route path="/radio" element={<RadioPage />} />
                 <Route path="/radio/:id" element={<RadioDetail />} />
                 <Route path="/channel/:id" element={<ChannelDetail />} />
