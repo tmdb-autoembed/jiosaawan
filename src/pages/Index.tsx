@@ -6,6 +6,7 @@ import { Flame, Disc3, ListMusic, Star, Radio, Sparkles, Music, BarChart3, Headp
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePlayer } from '@/contexts/PlayerContext';
+import HindiSongsSection from '@/components/HindiSongsSection';
 
 const Index = () => {
   const navigate = useNavigate();
