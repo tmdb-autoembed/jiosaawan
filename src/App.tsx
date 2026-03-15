@@ -19,8 +19,6 @@ import PodcastsPage from "./pages/PodcastsPage";
 import PodcastDetail from "./pages/PodcastDetail";
 import Profile from "./pages/Profile";
 import ChartsPage from "./pages/ChartsPage";
-import GenresPage from "./pages/GenresPage";
-import MoodsPage from "./pages/MoodsPage";
 import RadioPage from "./pages/RadioPage";
 import RadioDetail from "./pages/RadioDetail";
 import ChannelDetail from "./pages/ChannelDetail";
