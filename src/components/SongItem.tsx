@@ -9,6 +9,23 @@ interface SongItemProps {
   showMeta?: boolean;
 }
 
+const VIBRANT_COLORS = [
+  'hsl(340, 85%, 60%)', // crimson-pink
+  'hsl(160, 70%, 50%)', // emerald
+  'hsl(45, 95%, 55%)',  // gold
+  'hsl(190, 80%, 55%)', // cyan
+  'hsl(280, 70%, 60%)', // purple
+  'hsl(25, 95%, 58%)',  // orange
+  'hsl(210, 80%, 60%)', // blue
+  'hsl(130, 65%, 50%)', // green
+];
+
+const getColor = (id: string, offset = 0) => {
+  let hash = 0;
+  for (let i = 0; i < (id || '').length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return VIBRANT_COLORS[Math.abs(hash + offset) % VIBRANT_COLORS.length];
+};
+
 const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemProps) => {
   const { currentSong, isPlaying, playQueue, loadAndPlay } = usePlayer();
   const isActive = currentSong?.id === song.id;
@@ -31,6 +48,10 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
       loadAndPlay(song);
     }
   };
+
+  const titleColor = isActive ? 'hsl(25, 95%, 58%)' : getColor(song.id || '', 0);
+  const artistColor = getColor(song.id || '', 2);
+  const metaColor = getColor(song.id || '', 4);
 
   return (
     <div
@@ -66,16 +87,16 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-semibold truncate ${isActive ? 'text-primary' : 'text-foreground'}`}>
+        <p className="text-sm font-semibold truncate" style={{ color: titleColor }}>
           {decodeHtml(song.name || song.title || 'Unknown')}
         </p>
-        <p className="text-xs text-muted-foreground truncate mt-0.5">{artist}</p>
+        <p className="text-xs truncate mt-0.5" style={{ color: artistColor, opacity: 0.85 }}>{artist}</p>
         {showMeta && metaParts.length > 0 && (
-          <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">{metaParts.join(' · ')}</p>
+          <p className="text-[10px] truncate mt-0.5" style={{ color: metaColor, opacity: 0.6 }}>{metaParts.join(' · ')}</p>
         )}
       </div>
 
-      <span className="text-xs text-muted-foreground/60 flex-shrink-0 pl-2 tabular-nums">{dur}</span>
+      <span className="text-xs flex-shrink-0 pl-2 tabular-nums" style={{ color: 'hsl(45, 95%, 65%)', opacity: 0.7 }}>{dur}</span>
     </div>
   );
 };

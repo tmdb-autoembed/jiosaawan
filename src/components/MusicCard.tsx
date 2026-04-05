@@ -8,6 +8,23 @@ interface MusicCardProps {
   type: 'songs' | 'albums' | 'artists' | 'playlists' | 'podcasts' | 'radio' | 'channels';
 }
 
+const VIBRANT_COLORS = [
+  'hsl(340, 85%, 65%)',
+  'hsl(160, 70%, 55%)',
+  'hsl(45, 95%, 60%)',
+  'hsl(190, 80%, 60%)',
+  'hsl(280, 70%, 65%)',
+  'hsl(25, 95%, 62%)',
+  'hsl(210, 80%, 65%)',
+  'hsl(130, 65%, 55%)',
+];
+
+const getColor = (id: string, offset = 0) => {
+  let hash = 0;
+  for (let i = 0; i < (id || '').length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return VIBRANT_COLORS[Math.abs(hash + offset) % VIBRANT_COLORS.length];
+};
+
 const MusicCard = ({ item, type }: MusicCardProps) => {
   const navigate = useNavigate();
   const { loadAndPlay } = usePlayer();
@@ -33,6 +50,9 @@ const MusicCard = ({ item, type }: MusicCardProps) => {
     else if (type === 'channels') navigate(`/channel/${item.id}`);
   };
 
+  const nameColor = getColor(item.id || name, 0);
+  const subColor = getColor(item.id || name, 3);
+
   if (isArtist) {
     return (
       <button onClick={handleClick} className="flex flex-col items-center gap-2.5 group min-w-[88px]">
@@ -48,7 +68,7 @@ const MusicCard = ({ item, type }: MusicCardProps) => {
             <Play className="w-3 h-3 text-primary-foreground ml-0.5" />
           </div>
         </div>
-        <span className="text-[11px] font-semibold text-foreground/80 group-hover:text-foreground truncate max-w-[88px] transition-colors">{name}</span>
+        <span className="text-[11px] font-semibold truncate max-w-[88px] transition-colors" style={{ color: nameColor }}>{name}</span>
       </button>
     );
   }
@@ -71,8 +91,8 @@ const MusicCard = ({ item, type }: MusicCardProps) => {
         </div>
       </div>
       <div className="p-3">
-        <p className="text-xs font-semibold text-foreground truncate">{name}</p>
-        <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{decodeHtml(String(sub))}</p>
+        <p className="text-xs font-semibold truncate" style={{ color: nameColor }}>{name}</p>
+        <p className="text-[10px] truncate mt-0.5" style={{ color: subColor, opacity: 0.75 }}>{decodeHtml(String(sub))}</p>
       </div>
     </button>
   );
