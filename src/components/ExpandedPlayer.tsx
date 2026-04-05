@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { getImg, getArtistStr, fmtTime, getUrlForQuality, getAudioUrl, getSongRingtone, decodeHtml } from '@/lib/api';
-import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Heart, Download, Sliders, Bell, Infinity as InfinityIcon, Power } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Heart, Download, Sliders, Bell, Infinity as InfinityIcon, Power, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +16,7 @@ const QUALITY_OPTIONS = [
 const ExpandedPlayer = () => {
   const {
     currentSong, isPlaying, togglePlay, playNext, playPrev,
-    currentTime, duration, seek, volume, setVolume,
+    currentTime, duration, seek,
     shuffle, toggleShuffle, repeat, toggleRepeat,
     expandedOpen, setExpandedOpen, setQueueOpen,
     toggleLike, isLiked, preferredQuality, setQuality,
@@ -76,6 +76,21 @@ const ExpandedPlayer = () => {
     }
   };
 
+  const handleShare = async () => {
+    const songUrl = currentSong.url || currentSong.permaUrl || `${window.location.origin}/?song=${currentSong.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: decodeHtml(currentSong.name || ''), text: `Listen to ${decodeHtml(currentSong.name || '')} by ${getArtistStr(currentSong)}`, url: songUrl });
+      } else {
+        await navigator.clipboard.writeText(songUrl);
+        toast.success('Link copied!');
+      }
+    } catch {
+      await navigator.clipboard.writeText(songUrl);
+      toast.success('Link copied!');
+    }
+  };
+
   const handleLyrics = () => {
     setExpandedOpen(false);
     navigate('/lyrics');
@@ -85,6 +100,7 @@ const ExpandedPlayer = () => {
     { icon: Mic, action: handleLyrics, label: 'Lyrics', active: false },
     { icon: ListOrdered, action: () => setQueueOpen(true), label: 'Queue', active: false },
     { icon: Heart, action: () => toggleLike(currentSong), label: 'Like', active: liked },
+    { icon: Share2, action: handleShare, label: 'Share', active: false },
     { icon: Bell, action: handleRingtone, label: 'Ringtone', active: false },
   ];
 
@@ -101,20 +117,18 @@ const ExpandedPlayer = () => {
         background: 'linear-gradient(180deg, hsl(250 20% 8%) 0%, hsl(340 30% 8%) 40%, hsl(25 30% 6%) 70%, hsl(250 22% 4%) 100%)',
       }}
     >
-      {/* Scrollable content */}
       <div className="relative flex-1 flex flex-col items-center px-4 sm:px-8 lg:px-16 pt-5 pb-4 overflow-y-auto">
-        {/* Pull indicator */}
         <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-4 flex-shrink-0" />
 
         {/* Header */}
         <div className="w-full max-w-lg flex items-center justify-between mb-4">
-          <button onClick={() => setExpandedOpen(false)} className="w-10 h-10 rounded-full bg-secondary/30 flex items-center justify-center hover:bg-secondary/50 transition-colors">
-            <ChevronDown className="w-5 h-5 text-foreground" />
+          <button onClick={() => setExpandedOpen(false)} className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary/50 to-secondary/20 flex items-center justify-center hover:from-secondary/60 transition-all">
+            <ChevronDown className="w-5 h-5 text-white" />
           </button>
           <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Now Playing</span>
           <button
             onClick={() => { setShowEqualizer(!showEqualizer); setActiveTab(showEqualizer ? 0 : 1); }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${showEqualizer ? 'bg-primary text-primary-foreground' : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'}`}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${showEqualizer ? 'bg-gradient-to-br from-primary to-primary/70 text-primary-foreground' : 'bg-gradient-to-br from-secondary/50 to-secondary/20 text-white hover:from-secondary/60'}`}
           >
             <Sliders className="w-4 h-4" />
           </button>
@@ -127,22 +141,20 @@ const ExpandedPlayer = () => {
           ))}
         </div>
 
-        {/* Content */}
         <div className="w-full max-w-lg">
           <AnimatePresence mode="wait">
             {showEqualizer ? (
               <motion.div key="equalizer" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="w-full">
-                {/* EQ On/Off toggle */}
-                <div className="flex items-center justify-between mb-4 bg-secondary/20 rounded-2xl p-3">
+                <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-secondary/30 to-secondary/10 rounded-2xl p-3">
                   <div className="flex items-center gap-2">
-                    <Power className="w-4 h-4 text-foreground" />
-                    <span className="text-xs font-semibold text-foreground">Equalizer</span>
+                    <Power className="w-4 h-4 text-white" />
+                    <span className="text-xs font-semibold text-white">Equalizer</span>
                   </div>
                   <button
                     onClick={toggleEqualizer}
                     className={`w-12 h-6 rounded-full transition-all relative ${audioEffects.enabled ? 'bg-primary' : 'bg-secondary/50'}`}
                   >
-                    <div className={`w-5 h-5 rounded-full bg-foreground absolute top-0.5 transition-all ${audioEffects.enabled ? 'left-6' : 'left-0.5'}`} />
+                    <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-all ${audioEffects.enabled ? 'left-6' : 'left-0.5'}`} />
                   </button>
                 </div>
                 <Equalizer />
@@ -159,8 +171,8 @@ const ExpandedPlayer = () => {
                   />
                 </div>
 
-                {/* Title */}
-                <h2 className="text-lg sm:text-xl font-bold text-foreground text-center mb-1 max-w-full truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                {/* Title - always white */}
+                <h2 className="text-lg sm:text-xl font-bold text-white text-center mb-1 max-w-full truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   {decodeHtml(currentSong.name || currentSong.title || '—')}
                 </h2>
                 <p className="text-sm text-center mb-5" style={{ color: 'hsl(190, 80%, 60%)' }}>{getArtistStr(currentSong) || '—'}</p>
@@ -176,25 +188,25 @@ const ExpandedPlayer = () => {
                   </div>
                 </div>
 
-                {/* Controls */}
+                {/* Controls - gradient buttons */}
                 <div className="flex items-center justify-center gap-4 sm:gap-5 my-3 w-full">
-                  <button onClick={toggleShuffle} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${shuffle ? 'bg-primary text-primary-foreground' : 'bg-gradient-to-b from-secondary/40 to-secondary/20 text-white/80'}`}>
+                  <button onClick={toggleShuffle} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${shuffle ? 'bg-gradient-to-br from-primary to-primary/60 text-white' : 'bg-gradient-to-br from-white/15 to-white/5 text-white/80 hover:from-white/20'}`}>
                     <Shuffle className="w-4.5 h-4.5" />
                   </button>
-                  <button onClick={playPrev} className="w-12 h-12 rounded-full bg-gradient-to-b from-secondary/40 to-secondary/15 flex items-center justify-center text-white hover:from-secondary/50 hover:to-secondary/25 transition-all">
+                  <button onClick={playPrev} className="w-12 h-12 rounded-full bg-gradient-to-br from-white/15 to-white/5 flex items-center justify-center text-white hover:from-white/25 transition-all">
                     <SkipBack className="w-5 h-5" />
                   </button>
                   <motion.button
                     onClick={togglePlay}
                     whileTap={{ scale: 0.95 }}
-                    className="w-[68px] h-[68px] rounded-full flex items-center justify-center text-primary-foreground bg-gradient-to-b from-primary to-primary/80"
+                    className="w-[68px] h-[68px] rounded-full flex items-center justify-center text-white bg-gradient-to-br from-primary via-primary/90 to-primary/60"
                   >
                     {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-1" />}
                   </motion.button>
-                  <button onClick={playNext} className="w-12 h-12 rounded-full bg-gradient-to-b from-secondary/40 to-secondary/15 flex items-center justify-center text-white hover:from-secondary/50 hover:to-secondary/25 transition-all">
+                  <button onClick={playNext} className="w-12 h-12 rounded-full bg-gradient-to-br from-white/15 to-white/5 flex items-center justify-center text-white hover:from-white/25 transition-all">
                     <SkipForward className="w-5 h-5" />
                   </button>
-                  <button onClick={toggleRepeat} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${repeat ? 'bg-primary text-primary-foreground' : 'bg-gradient-to-b from-secondary/40 to-secondary/20 text-white/80'}`}>
+                  <button onClick={toggleRepeat} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${repeat ? 'bg-gradient-to-br from-primary to-primary/60 text-white' : 'bg-gradient-to-br from-white/15 to-white/5 text-white/80 hover:from-white/20'}`}>
                     <Repeat className="w-4.5 h-4.5" />
                   </button>
                 </div>
@@ -203,7 +215,7 @@ const ExpandedPlayer = () => {
                 <button
                   onClick={toggleAutoPlay}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all mt-1 ${
-                    autoPlay ? 'bg-primary text-primary-foreground' : 'bg-secondary/20 text-white/60 hover:text-white'
+                    autoPlay ? 'bg-gradient-to-r from-primary to-primary/70 text-white' : 'bg-gradient-to-r from-white/10 to-white/5 text-white/60 hover:text-white'
                   }`}
                 >
                   <InfinityIcon className="w-4 h-4" />
@@ -217,27 +229,13 @@ const ExpandedPlayer = () => {
                       key={label}
                       onClick={action}
                       className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl transition-all ${
-                        active ? 'bg-primary text-primary-foreground' : 'text-white/70 hover:text-white hover:bg-secondary/20'
+                        active ? 'bg-gradient-to-br from-primary to-primary/60 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'
                       }`}
                     >
                       <Icon className={`w-4 h-4 ${active ? 'fill-current' : ''}`} />
                       <span className="text-[9px] font-semibold">{label}</span>
                     </button>
                   ))}
-                </div>
-
-                {/* Volume */}
-                <div className="flex items-center gap-3 w-full mt-4 bg-secondary/15 rounded-2xl p-3.5">
-                  <span className="text-sm opacity-60">🔈</span>
-                  <input
-                    type="range" min="0" max="1" step="0.01" value={volume}
-                    onChange={(e) => setVolume(parseFloat(e.target.value))}
-                    className="flex-1 h-1 appearance-none rounded-full bg-secondary/30 cursor-pointer accent-primary"
-                    style={{
-                      background: `linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--primary)) ${volume * 100}%, hsla(250, 12%, 16%, 0.5) ${volume * 100}%)`
-                    }}
-                  />
-                  <span className="text-sm opacity-60">🔊</span>
                 </div>
 
                 {/* Quality */}
@@ -250,8 +248,8 @@ const ExpandedPlayer = () => {
                         onClick={() => setQuality(value)}
                         className={`px-5 py-2 rounded-xl text-xs font-semibold transition-all ${
                           preferredQuality === value
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-gradient-to-b from-secondary/30 to-secondary/15 text-white/50 hover:from-secondary/40 hover:to-secondary/25'
+                            ? 'bg-gradient-to-r from-primary to-primary/70 text-white'
+                            : 'bg-gradient-to-br from-white/10 to-white/5 text-white/50 hover:from-white/15'
                         }`}
                       >
                         {label}
@@ -260,11 +258,11 @@ const ExpandedPlayer = () => {
                   </div>
                 </div>
 
-                {/* Download - always visible */}
+                {/* Download */}
                 <motion.button
                   onClick={handleDownload}
                   whileTap={{ scale: 0.98 }}
-                  className="mt-4 mb-6 w-full py-3.5 rounded-2xl text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 bg-gradient-to-b from-primary to-primary/80 flex-shrink-0"
+                  className="mt-4 mb-6 w-full py-3.5 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 bg-gradient-to-r from-primary via-primary/90 to-primary/60 flex-shrink-0"
                 >
                   <Download className="w-4 h-4" /> Download Song
                 </motion.button>
