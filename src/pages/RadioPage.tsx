@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getRadio, getRadioFeatured, getImg, decodeHtml } from '@/lib/api';
+import { getRadioArtists, getRadioFeatured, getImg, decodeHtml } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 import { Radio, Loader2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -16,11 +16,13 @@ const RadioPage = () => {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      getRadio(1, 20),
+      getRadioArtists(undefined, 1, 20),
       getRadioFeatured(1, 10),
     ]).then(([radioRes, featRes]) => {
-      setStations(radioRes?.data?.results || []);
-      setHasMore(radioRes?.data?.hasMore ?? true);
+      const rData = radioRes?.data;
+      const rItems = rData?.results || rData?.songs || (Array.isArray(rData) ? rData : []);
+      setStations(rItems);
+      setHasMore(rItems.length >= 20);
       setFeatured(featRes?.data?.results || []);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -30,10 +32,11 @@ const RadioPage = () => {
     setLoadingMore(true);
     try {
       const next = page + 1;
-      const res = await getRadio(next, 20);
-      const items = res?.data?.results || [];
+      const res = await getRadioArtists(undefined, next, 20);
+      const rData = res?.data;
+      const items = rData?.results || rData?.songs || (Array.isArray(rData) ? rData : []);
       if (items.length === 0) setHasMore(false);
-      else { setStations(prev => [...prev, ...items]); setPage(next); setHasMore(res?.data?.hasMore ?? items.length >= 20); }
+      else { setStations(prev => [...prev, ...items]); setPage(next); setHasMore(items.length >= 20); }
     } catch {} finally { setLoadingMore(false); }
   }, [page, hasMore, loadingMore]);
 
@@ -89,10 +92,10 @@ const RadioPage = () => {
               className="card-surface rounded-2xl overflow-hidden w-full transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl active:scale-[0.97] text-left group"
             >
               <div className="aspect-square overflow-hidden">
-                <img src={getImg(s.image, '500x500')} alt={decodeHtml(s.name)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <img src={getImg(s.image, '500x500')} alt={decodeHtml(s.name || '')} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               </div>
               <div className="p-3">
-                <p className="text-xs font-semibold text-foreground truncate">{decodeHtml(s.name)}</p>
+                <p className="text-xs font-semibold text-foreground truncate">{decodeHtml(s.name || '')}</p>
                 {s.language && <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{s.language}</p>}
               </div>
             </motion.button>

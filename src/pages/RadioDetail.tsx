@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { getRadioById, getImg, decodeHtml } from '@/lib/api';
+import { useEffect, useState, useCallback } from 'react';
+import { getRadioArtists, getImg, decodeHtml } from '@/lib/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import SongItem from '@/components/SongItem';
 import { usePlayer } from '@/contexts/PlayerContext';
@@ -13,20 +13,36 @@ const RadioDetail = () => {
   const [station, setStation] = useState<any>(null);
   const [songs, setSongs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    getRadioById(id).then(res => {
+    getRadioArtists(id, 1, 20).then(res => {
       const data = res?.data;
       if (data) {
         setStation(data);
-        // Radio detail may return songs in different structures
         const s = data.songs || data.results || data.stationSongs || [];
         setSongs(Array.isArray(s) ? s : []);
+        setHasMore((data.songs || data.results || data.stationSongs || []).length >= 20);
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [id]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || !id) return;
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const res = await getRadioArtists(id, next, 20);
+      const data = res?.data;
+      const s = data?.songs || data?.results || data?.stationSongs || [];
+      if (s.length === 0) setHasMore(false);
+      else { setSongs(prev => [...prev, ...s]); setPage(next); setHasMore(s.length >= 20); }
+    } catch {} finally { setLoadingMore(false); }
+  }, [page, hasMore, loadingMore, id]);
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   if (!station) return <p className="text-center text-muted-foreground py-10">Station not found</p>;
@@ -40,9 +56,9 @@ const RadioDetail = () => {
       </button>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center text-center gap-4">
-        {imgUrl && <img src={imgUrl} alt={decodeHtml(station.name)} className="w-40 h-40 rounded-2xl object-cover shadow-xl" />}
+        {imgUrl && <img src={imgUrl} alt={decodeHtml(station.name || '')} className="w-40 h-40 rounded-2xl object-cover shadow-xl" />}
         <div>
-          <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{decodeHtml(station.name || '')}</h1>
+          <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{decodeHtml(station.name || 'Radio')}</h1>
           {station.description && <p className="text-sm text-muted-foreground mt-1">{decodeHtml(station.description)}</p>}
           <div className="flex items-center justify-center gap-1.5 mt-2">
             <Radio className="w-3.5 h-3.5 text-primary" />
@@ -63,6 +79,12 @@ const RadioDetail = () => {
             <SongItem key={`${song.id}-${i}`} song={song} songList={songs} songIdx={i} />
           ))}
         </div>
+      )}
+
+      {hasMore && (
+        <button onClick={loadMore} disabled={loadingMore} className="w-full py-2.5 btn-3d-glass rounded-2xl text-sm font-semibold text-primary flex items-center justify-center gap-1.5 disabled:opacity-50">
+          {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load More'}
+        </button>
       )}
     </div>
   );
