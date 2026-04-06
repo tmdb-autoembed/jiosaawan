@@ -632,6 +632,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsPlaying(false);
     setExpandedOpen(false);
     setQueueOpen(false);
+    localStorage.removeItem('currentSong');
+    localStorage.removeItem('playerQueue');
+    localStorage.removeItem('queueIdx');
+    localStorage.removeItem('playerTime');
   }, []);
 
   // Keyboard shortcuts
