@@ -11,7 +11,6 @@ const tabs = [
   { id: 'charts', label: 'Charts', icon: BarChart3, path: '/charts' },
   { id: 'radio', label: 'Radio', icon: Radio, path: '/radio' },
   { id: 'podcasts', label: 'Podcasts', icon: Headphones, path: '/podcasts' },
-  { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
 
 const TopBar = () => {
