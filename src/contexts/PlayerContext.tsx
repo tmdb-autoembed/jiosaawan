@@ -92,10 +92,19 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bypassNodeRef = useRef<GainNode | null>(null);
   const effectsOutputRef = useRef<GainNode | null>(null);
 
-  const [currentSong, setCurrentSong] = useState<any | null>(null);
-  const [queue, setQueue] = useState<any[]>([]);
-  const [queueIdx, setQueueIdx] = useState(-1);
+  const [currentSong, setCurrentSong] = useState<any | null>(() => {
+    try { const s = localStorage.getItem('currentSong'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [queue, setQueue] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('playerQueue') || '[]'); } catch { return []; }
+  });
+  const [queueIdx, setQueueIdx] = useState(() => {
+    try { return parseInt(localStorage.getItem('queueIdx') || '-1', 10); } catch { return -1; }
+  });
   const [isPlaying, setIsPlaying] = useState(false);
+  const resumeTimeRef = useRef<number>(() => {
+    try { return parseFloat(localStorage.getItem('playerTime') || '0'); } catch { return 0; }
+  });
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(1);
