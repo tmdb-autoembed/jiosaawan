@@ -77,7 +77,7 @@ const ExpandedPlayer = () => {
   };
 
   const handleShare = async () => {
-    const songUrl = currentSong.url || currentSong.permaUrl || `${window.location.origin}/?song=${currentSong.id}`;
+    const songUrl = `${window.location.origin}/?song=${currentSong.id}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: decodeHtml(currentSong.name || ''), text: `Listen to ${decodeHtml(currentSong.name || '')} by ${getArtistStr(currentSong)}`, url: songUrl });

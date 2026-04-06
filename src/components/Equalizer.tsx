@@ -120,35 +120,41 @@ const Equalizer = () => {
             </div>
           </div>
 
-          {/* 6-Band EQ - Vertical sliders */}
-          <div className="card-surface rounded-2xl p-4 mb-4">
+          {/* 6-Band EQ - Vertical sliders with color fill */}
+          <div className="rounded-2xl p-4 mb-4" style={{ background: 'hsla(250, 18%, 12%, 0.6)' }}>
             <div className="flex justify-between items-end gap-3 h-44">
-              {bands.map((band, index) => (
-                <div key={index} className="flex-1 flex flex-col items-center gap-1.5">
-                  <div className="h-28 flex flex-col items-center justify-end relative">
-                    <div className="w-3 rounded-full transition-all"
-                      style={{
-                        height: `${Math.max(10, ((band.gain + 12) / 24) * 100)}%`,
-                        background: `linear-gradient(to top, ${barColors[index]}, ${barColors[index]}88)`,
-                      }}
-                    />
-                    <input type="range" min="-12" max="12" step="1" value={band.gain}
-                      onChange={(e) => handleBandChange(index, [parseInt(e.target.value)])}
-                      className="absolute h-28 w-6 opacity-0 cursor-pointer"
-                      style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
-                    />
+              {bands.map((band, index) => {
+                const fillPct = ((band.gain + 12) / 24) * 100;
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center gap-1.5">
+                    <div className="h-28 w-5 rounded-full relative overflow-hidden" style={{ background: 'hsla(250, 15%, 20%, 0.6)' }}>
+                      {/* Color fill from bottom */}
+                      <div
+                        className="absolute bottom-0 left-0 right-0 rounded-full transition-all duration-200"
+                        style={{
+                          height: `${Math.max(5, fillPct)}%`,
+                          background: `linear-gradient(to top, ${barColors[index]}, ${barColors[index]}88)`,
+                          boxShadow: `0 0 8px ${barColors[index]}66`,
+                        }}
+                      />
+                      <input type="range" min="-12" max="12" step="1" value={band.gain}
+                        onChange={(e) => handleBandChange(index, [parseInt(e.target.value)])}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
+                      />
+                    </div>
+                    <span className="text-[9px] font-bold" style={{ color: barColors[index] }}>
+                      {band.gain > 0 ? '+' : ''}{band.gain}
+                    </span>
+                    <span className="text-[9px] text-muted-foreground/50">{band.frequency}</span>
                   </div>
-                  <span className="text-[9px] font-semibold" style={{ color: barColors[index] }}>
-                    {band.gain > 0 ? '+' : ''}{band.gain}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground/40">{band.frequency}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* Bass Boost - Vertical */}
-          <div className="card-surface rounded-2xl p-4">
+          {/* Bass Boost */}
+          <div className="rounded-2xl p-4" style={{ background: 'hsla(250, 18%, 12%, 0.6)' }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary">
                 <Volume2 className="w-4 h-4 text-primary-foreground" />
@@ -167,7 +173,7 @@ const Equalizer = () => {
       {activeTab === 'effects' && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
           {effectSliders.map(({ label, value, set, max = 100, min = 0, step = 5, icon: Icon, color, display }) => (
-            <div key={label} className="card-surface rounded-2xl p-4">
+            <div key={label} className="rounded-2xl p-4" style={{ background: 'hsla(250, 18%, 12%, 0.6)' }}>
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: color }}>
                   <Icon className="w-4 h-4 text-white" />
