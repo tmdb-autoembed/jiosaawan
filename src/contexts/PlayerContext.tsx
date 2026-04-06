@@ -143,6 +143,56 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => { localStorage.setItem('audioEffects', JSON.stringify(audioEffects)); }, [audioEffects]);
   useEffect(() => { localStorage.setItem('autoPlay', String(autoPlay)); }, [autoPlay]);
 
+  // Persist playback state
+  useEffect(() => { if (currentSong) localStorage.setItem('currentSong', JSON.stringify(currentSong)); }, [currentSong]);
+  useEffect(() => { localStorage.setItem('playerQueue', JSON.stringify(queue.slice(0, 50))); }, [queue]);
+  useEffect(() => { localStorage.setItem('queueIdx', String(queueIdx)); }, [queueIdx]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (audioRef.current && !audioRef.current.paused) {
+        localStorage.setItem('playerTime', String(audioRef.current.currentTime));
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Restore playback on mount
+  const hasRestoredRef = useRef(false);
+  useEffect(() => {
+    if (hasRestoredRef.current || !currentSong || !audioRef.current) return;
+    hasRestoredRef.current = true;
+    const restoreSong = async () => {
+      try {
+        let songData = currentSong;
+        if (!songData.downloadUrl || !Array.isArray(songData.downloadUrl) || !songData.downloadUrl.length) {
+          const res = await getSongById(songData.id);
+          songData = (res.data && (Array.isArray(res.data) ? res.data[0] : res.data)) || songData;
+          setCurrentSong(songData);
+        }
+        const url = getAudioUrl(songData, preferredQuality);
+        if (!url) return;
+        const audio = audioRef.current!;
+        audio.src = url;
+        audio.currentTime = resumeTimeRef.current;
+        audio.playbackRate = audioEffects.speed;
+        audio.play().catch(() => {});
+        // Media Session
+        if ('mediaSession' in navigator) {
+          try {
+            const artworkUrl = getImg(songData.image, '500x500');
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: songData.name || songData.title || 'Unknown',
+              artist: getArtistStr(songData),
+              album: songData.album?.name || '',
+              artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }] : [],
+            });
+          } catch {}
+        }
+      } catch {}
+    };
+    restoreSong();
+  }, []);
+
   // Initialize Web Audio API
   const initAudioContext = useCallback(() => {
     const audio = audioRef.current;
