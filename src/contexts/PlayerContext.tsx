@@ -102,9 +102,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try { return parseInt(localStorage.getItem('queueIdx') || '-1', 10); } catch { return -1; }
   });
   const [isPlaying, setIsPlaying] = useState(false);
-  const resumeTimeRef = useRef<number>(() => {
-    try { return parseFloat(localStorage.getItem('playerTime') || '0'); } catch { return 0; }
-  });
+  const resumeTimeRef = useRef<number>(
+    (() => { try { return parseFloat(localStorage.getItem('playerTime') || '0'); } catch { return 0; } })()
+  );
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(1);
