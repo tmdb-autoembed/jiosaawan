@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePlayer } from '@/contexts/PlayerContext';
 import HindiSongsSection from '@/components/HindiSongsSection';
+import LanguageSongsSection from '@/components/LanguageSongsSection';
 
 const Index = () => {
   const navigate = useNavigate();
