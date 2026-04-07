@@ -29,12 +29,13 @@ const MusicCard = ({ item, type }: MusicCardProps) => {
   const navigate = useNavigate();
   const { loadAndPlay } = usePlayer();
   const isArtist = type === 'artists';
-  const imgUrl = getImg(item.image || item.squareImage, '150x150');
+  const imgQuality = type === 'albums' ? '500x500' : '150x150';
+  const imgUrl = getImg(item.image || item.squareImage, imgQuality);
   const name = decodeHtml(item.name || item.title || 'Unknown');
   const sub = type === 'songs' ? getArtistStr(item)
     : type === 'albums' ? (item.primaryArtists || item.year || '')
     : type === 'artists' ? (item.role || 'Artist')
-    : type === 'playlists' ? `${item.songCount || 0} songs`
+    : type === 'playlists' ? (item.language || 'Playlist')
     : type === 'podcasts' ? (item.language || 'Podcast')
     : type === 'radio' ? (item.language || item.description || 'Radio')
     : type === 'channels' ? (item.subType || 'Channel')
