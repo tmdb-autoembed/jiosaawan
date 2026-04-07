@@ -35,7 +35,7 @@ const MusicCard = ({ item, type }: MusicCardProps) => {
   const sub = type === 'songs' ? getArtistStr(item)
     : type === 'albums' ? (item.primaryArtists || item.year || '')
     : type === 'artists' ? (item.role || 'Artist')
-    : type === 'playlists' ? `${item.songCount || 0} songs`
+    : type === 'playlists' ? (item.language || 'Playlist')
     : type === 'podcasts' ? (item.language || 'Podcast')
     : type === 'radio' ? (item.language || item.description || 'Radio')
     : type === 'channels' ? (item.subType || 'Channel')

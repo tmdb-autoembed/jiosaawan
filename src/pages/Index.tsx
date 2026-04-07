@@ -213,6 +213,7 @@ const Index = () => {
             What's <span className="text-primary">Trending</span> Today
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Curated from millions of listeners</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-3">Made by the Rider Team with a third-party API</p>
         </div>
       </motion.div>
 

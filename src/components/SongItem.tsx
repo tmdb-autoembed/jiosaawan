@@ -58,7 +58,7 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
   return (
     <div
       onClick={handleClick}
-      className={`group flex items-center gap-0 rounded-xl cursor-pointer transition-all duration-200 active:scale-[0.98] overflow-hidden ${
+      className={`group flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200 active:scale-[0.98] px-2.5 py-2 ${
         isActive
           ? 'ring-1 ring-primary/30 shadow-md shadow-primary/10'
           : 'hover:translate-x-0.5'
@@ -69,29 +69,28 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
           : 'linear-gradient(135deg, hsla(250, 20%, 14%, 0.5), hsla(250, 18%, 12%, 0.4))',
       }}
     >
-      {/* Image - bigger, no gap */}
       <div className="relative flex-shrink-0">
         {imgUrl ? (
           <img
             src={imgUrl}
             alt={decodeHtml(song.name || '')}
             loading="lazy"
-            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-l-xl object-cover ${isActive ? 'ring-2 ring-primary/40' : ''}`}
+            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover ${isActive ? 'ring-2 ring-primary/40' : ''}`}
             onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
           />
         ) : (
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-l-xl bg-secondary flex items-center justify-center">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-secondary flex items-center justify-center">
             <Music className="w-5 h-5 text-muted-foreground/40" />
           </div>
         )}
         {isActive && isPlaying && (
-          <div className="absolute inset-0 rounded-l-xl bg-black/30 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-lg bg-black/30 flex items-center justify-center">
             <WaveBars />
           </div>
         )}
       </div>
 
-      <div className="flex-1 min-w-0 py-2 px-3">
+      <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold truncate text-white">
           {decodeHtml(song.name || song.title || 'Unknown')}
         </p>
@@ -101,8 +100,7 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
         )}
       </div>
 
-      <span className="text-xs flex-shrink-0 tabular-nums" style={{ color: 'hsl(45, 95%, 65%)', opacity: 0.7 }}>{dur}</span>
-
+      <span className="text-xs flex-shrink-0 tabular-nums pr-1" style={{ color: 'hsl(45, 95%, 65%)', opacity: 0.7 }}>{dur}</span>
     </div>
   );
 };
