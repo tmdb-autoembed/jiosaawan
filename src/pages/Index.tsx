@@ -221,6 +221,23 @@ const Index = () => {
       {/* Hindi Hits Section */}
       <HindiSongsSection />
 
+      {/* Punjabi */}
+      <LanguageSongsSection language="Punjabi" emoji="🎵" icon={<Music className="w-4 h-4 text-white" />} gradient="from-amber-500 to-orange-500" />
+
+      {/* English */}
+      <LanguageSongsSection language="English" emoji="🎤" icon={<Globe className="w-4 h-4 text-white" />} gradient="from-blue-500 to-indigo-500" />
+
+      {/* Tamil */}
+      <LanguageSongsSection language="Tamil" emoji="🎼" icon={<Music className="w-4 h-4 text-white" />} gradient="from-emerald-500 to-teal-500" />
+
+      {/* Telugu */}
+      <LanguageSongsSection language="Telugu" emoji="🎹" icon={<Music className="w-4 h-4 text-white" />} gradient="from-purple-500 to-pink-500" />
+
+      {/* Bengali */}
+      <LanguageSongsSection language="Bengali" emoji="🪕" icon={<Music className="w-4 h-4 text-white" />} gradient="from-cyan-500 to-blue-500" />
+
+      {/* Marathi */}
+      <LanguageSongsSection language="Marathi" emoji="🥁" icon={<Music className="w-4 h-4 text-white" />} gradient="from-rose-500 to-red-500" />
       {/* All main sections */}
       {sections.map((s, i) => renderSection(s.key, s.title, s.items, s.renderType, s.seeAll, i))}
 
