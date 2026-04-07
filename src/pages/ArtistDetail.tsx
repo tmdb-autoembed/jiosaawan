@@ -18,6 +18,30 @@ const ArtistDetail = () => {
   const [related, setRelated] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bioOpen, setBioOpen] = useState(false);
+  const [isFav, setIsFav] = useState(false);
+
+  // Favorite logic using localStorage
+  const FAV_KEY = 'fav_artists';
+  const getFavs = (): any[] => { try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch { return []; } };
+
+  useEffect(() => {
+    if (id) setIsFav(getFavs().some((a: any) => a.id === id));
+  }, [id]);
+
+  const toggleFav = () => {
+    if (!artist) return;
+    const favs = getFavs();
+    if (isFav) {
+      localStorage.setItem(FAV_KEY, JSON.stringify(favs.filter((a: any) => a.id !== id)));
+      setIsFav(false);
+      toast.success('Removed from favorites');
+    } else {
+      favs.push({ id: artist.id || id, name: artist.name, image: artist.image });
+      localStorage.setItem(FAV_KEY, JSON.stringify(favs));
+      setIsFav(true);
+      toast.success('Added to favorites ❤️');
+    }
+  };
 
   // Infinite scroll state
   const [songsPage, setSongsPage] = useState(1);
