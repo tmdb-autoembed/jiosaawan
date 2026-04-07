@@ -19,17 +19,30 @@ const TopBar = () => {
   const [query, setQuery] = useState('');
   const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const scrollUpAccum = useRef(0);
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    let ticking = false;
     const onScroll = () => {
-      const y = window.scrollY;
-      if (y > lastScrollY.current && y > 80) {
-        setHidden(true);
-      } else {
-        setHidden(false);
-      }
-      lastScrollY.current = y;
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const delta = y - lastScrollY.current;
+        if (delta > 0 && y > 80) {
+          setHidden(true);
+          scrollUpAccum.current = 0;
+        } else if (delta < 0) {
+          scrollUpAccum.current += Math.abs(delta);
+          if (scrollUpAccum.current > 400) {
+            setHidden(false);
+          }
+        }
+        if (y < 80) { setHidden(false); scrollUpAccum.current = 0; }
+        lastScrollY.current = y;
+        ticking = false;
+      });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);

@@ -1,8 +1,8 @@
 import { getImg, getArtistStr, fmtTime, decodeHtml } from '@/lib/api';
 import { usePlayer } from '@/contexts/PlayerContext';
 import WaveBars from './WaveBars';
-import { Share2, Music } from 'lucide-react';
-import { toast } from 'sonner';
+import { Music } from 'lucide-react';
+
 
 interface SongItemProps {
   song: any;
@@ -51,17 +51,6 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
     }
   };
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Always use app's own URL
-    const songUrl = `${window.location.origin}/?song=${song.id}`;
-    if (navigator.share) {
-      navigator.share({ title: decodeHtml(song.name || ''), text: `Listen to ${decodeHtml(song.name || '')}`, url: songUrl }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(songUrl);
-      toast.success('Link copied!');
-    }
-  };
 
   const artistColor = getColor(song.id || '', 2);
   const metaColor = getColor(song.id || '', 4);
@@ -114,13 +103,6 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
 
       <span className="text-xs flex-shrink-0 tabular-nums" style={{ color: 'hsl(45, 95%, 65%)', opacity: 0.7 }}>{dur}</span>
 
-      {/* Share button - always visible on mobile */}
-      <button
-        onClick={handleShare}
-        className="flex-shrink-0 p-2 mr-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-all sm:opacity-0 sm:group-hover:opacity-100"
-      >
-        <Share2 className="w-3.5 h-3.5" />
-      </button>
     </div>
   );
 };
