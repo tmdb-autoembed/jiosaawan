@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { getImg, getArtistStr, fmtTime, getUrlForQuality, getAudioUrl, getSongRingtone, decodeHtml } from '@/lib/api';
-import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Heart, Download, Sliders, Bell, Infinity as InfinityIcon, Power, Share2 } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Heart, Download, Sliders, Bell, Infinity as InfinityIcon, Power } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -76,21 +76,6 @@ const ExpandedPlayer = () => {
     }
   };
 
-  const handleShare = async () => {
-    const songUrl = `${window.location.origin}/?song=${currentSong.id}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: decodeHtml(currentSong.name || ''), text: `Listen to ${decodeHtml(currentSong.name || '')} by ${getArtistStr(currentSong)}`, url: songUrl });
-      } else {
-        await navigator.clipboard.writeText(songUrl);
-        toast.success('Link copied!');
-      }
-    } catch {
-      await navigator.clipboard.writeText(songUrl);
-      toast.success('Link copied!');
-    }
-  };
-
   const handleLyrics = () => {
     setExpandedOpen(false);
     navigate('/lyrics');
@@ -100,7 +85,6 @@ const ExpandedPlayer = () => {
     { icon: Mic, action: handleLyrics, label: 'Lyrics', active: false },
     { icon: ListOrdered, action: () => setQueueOpen(true), label: 'Queue', active: false },
     { icon: Heart, action: () => toggleLike(currentSong), label: 'Like', active: liked },
-    { icon: Share2, action: handleShare, label: 'Share', active: false },
     { icon: Bell, action: handleRingtone, label: 'Ringtone', active: false },
   ];
 

@@ -4,8 +4,9 @@ import { getArtistById, getArtistSongs, getArtistAlbums, getRelatedArtists, getI
 import { usePlayer } from '@/contexts/PlayerContext';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
-import { ArrowLeft, Play, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, Play, Loader2, Users, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const ArtistDetail = () => {
   const { id } = useParams();
@@ -17,6 +18,30 @@ const ArtistDetail = () => {
   const [related, setRelated] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bioOpen, setBioOpen] = useState(false);
+  const [isFav, setIsFav] = useState(false);
+
+  // Favorite logic using localStorage
+  const FAV_KEY = 'fav_artists';
+  const getFavs = (): any[] => { try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch { return []; } };
+
+  useEffect(() => {
+    if (id) setIsFav(getFavs().some((a: any) => a.id === id));
+  }, [id]);
+
+  const toggleFav = () => {
+    if (!artist) return;
+    const favs = getFavs();
+    if (isFav) {
+      localStorage.setItem(FAV_KEY, JSON.stringify(favs.filter((a: any) => a.id !== id)));
+      setIsFav(false);
+      toast.success('Removed from favorites');
+    } else {
+      favs.push({ id: artist.id || id, name: artist.name, image: artist.image });
+      localStorage.setItem(FAV_KEY, JSON.stringify(favs));
+      setIsFav(true);
+      toast.success('Added to favorites ❤️');
+    }
+  };
 
   // Infinite scroll state
   const [songsPage, setSongsPage] = useState(1);
@@ -122,7 +147,20 @@ const ArtistDetail = () => {
           </div>
         </div>
         <h2 className="text-xl font-black text-foreground mt-3">{decodeHtml(artist.name)}</h2>
-        {followers && <p className="text-xs text-muted-foreground mt-1">{Number(followers).toLocaleString()} followers</p>}
+        <div className="flex items-center gap-3 mt-2">
+          {followers && <p className="text-xs text-muted-foreground">{Number(followers).toLocaleString()} followers</p>}
+          <button
+            onClick={toggleFav}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              isFav
+                ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
+                : 'bg-secondary/60 text-foreground hover:bg-secondary'
+            }`}
+          >
+            <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-white' : ''}`} />
+            {isFav ? 'Favorited' : 'Favorite'}
+          </button>
+        </div>
       </motion.div>
 
       {/* Bio */}

@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
-import { Heart, HeartCrack, Bookmark, ListMusic, Sliders, Play } from 'lucide-react';
+import { Heart, HeartCrack, Bookmark, ListMusic, Sliders, Play, Users, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getImg, decodeHtml } from '@/lib/api';
 
 const QUALITY_OPTIONS = [
   { value: '96kbps', label: '96 kbps', gradient: 'from-gray-500 to-gray-600' },
@@ -11,6 +14,18 @@ const QUALITY_OPTIONS = [
 
 const Profile = () => {
   const { likedSongs, savedPlaylists, playQueue, preferredQuality, setQuality } = usePlayer();
+  const navigate = useNavigate();
+  const [favArtists, setFavArtists] = useState<any[]>([]);
+
+  useEffect(() => {
+    try { setFavArtists(JSON.parse(localStorage.getItem('fav_artists') || '[]')); } catch {}
+  }, []);
+
+  const removeFav = (artistId: string) => {
+    const updated = favArtists.filter(a => a.id !== artistId);
+    setFavArtists(updated);
+    localStorage.setItem('fav_artists', JSON.stringify(updated));
+  };
 
   return (
     <div className="p-4 pb-40">
@@ -64,6 +79,39 @@ const Profile = () => {
         )}
       </div>
 
+      {/* Favorite Artists */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-fuchsia-500 to-purple-500 flex items-center justify-center">
+            <Users className="w-3.5 h-3.5 text-white" />
+          </div>
+          <h2 className="text-sm font-black text-foreground">Favorite Artists ({favArtists.length})</h2>
+        </div>
+
+        {favArtists.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground card-surface rounded-2xl">
+            <Users className="w-10 h-10 opacity-50" />
+            <p className="text-sm">No favorite artists yet</p>
+          </div>
+        ) : (
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {favArtists.map(a => (
+              <div key={a.id} className="flex-shrink-0 flex flex-col items-center gap-1.5 relative group" onClick={() => navigate(`/artist/${a.id}`)}>
+                <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-primary/30">
+                  <img src={getImg(a.image, '150x150')} alt="" className="w-full h-full object-cover" />
+                </div>
+                <span className="text-[10px] font-bold text-foreground text-center w-16 truncate">{decodeHtml(a.name || '')}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeFav(a.id); }}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       {/* Quality */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
