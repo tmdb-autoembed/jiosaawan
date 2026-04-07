@@ -51,17 +51,6 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
     }
   };
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Always use app's own URL
-    const songUrl = `${window.location.origin}/?song=${song.id}`;
-    if (navigator.share) {
-      navigator.share({ title: decodeHtml(song.name || ''), text: `Listen to ${decodeHtml(song.name || '')}`, url: songUrl }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(songUrl);
-      toast.success('Link copied!');
-    }
-  };
 
   const artistColor = getColor(song.id || '', 2);
   const metaColor = getColor(song.id || '', 4);
