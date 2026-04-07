@@ -76,21 +76,6 @@ const ExpandedPlayer = () => {
     }
   };
 
-  const handleShare = async () => {
-    const songUrl = `${window.location.origin}/?song=${currentSong.id}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: decodeHtml(currentSong.name || ''), text: `Listen to ${decodeHtml(currentSong.name || '')} by ${getArtistStr(currentSong)}`, url: songUrl });
-      } else {
-        await navigator.clipboard.writeText(songUrl);
-        toast.success('Link copied!');
-      }
-    } catch {
-      await navigator.clipboard.writeText(songUrl);
-      toast.success('Link copied!');
-    }
-  };
-
   const handleLyrics = () => {
     setExpandedOpen(false);
     navigate('/lyrics');
