@@ -1,7 +1,7 @@
 import { getImg, getArtistStr, fmtTime, decodeHtml } from '@/lib/api';
 import { usePlayer } from '@/contexts/PlayerContext';
 import WaveBars from './WaveBars';
-import { Share2, Music } from 'lucide-react';
+import { Music } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SongItemProps {
