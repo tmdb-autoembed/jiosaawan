@@ -4,8 +4,9 @@ import { getArtistById, getArtistSongs, getArtistAlbums, getRelatedArtists, getI
 import { usePlayer } from '@/contexts/PlayerContext';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
-import { ArrowLeft, Play, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, Play, Loader2, Users, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const ArtistDetail = () => {
   const { id } = useParams();
