@@ -14,6 +14,18 @@ const QUALITY_OPTIONS = [
 
 const Profile = () => {
   const { likedSongs, savedPlaylists, playQueue, preferredQuality, setQuality } = usePlayer();
+  const navigate = useNavigate();
+  const [favArtists, setFavArtists] = useState<any[]>([]);
+
+  useEffect(() => {
+    try { setFavArtists(JSON.parse(localStorage.getItem('fav_artists') || '[]')); } catch {}
+  }, []);
+
+  const removeFav = (artistId: string) => {
+    const updated = favArtists.filter(a => a.id !== artistId);
+    setFavArtists(updated);
+    localStorage.setItem('fav_artists', JSON.stringify(updated));
+  };
 
   return (
     <div className="p-4 pb-40">
