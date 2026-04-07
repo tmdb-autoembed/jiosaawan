@@ -85,7 +85,6 @@ const ExpandedPlayer = () => {
     { icon: Mic, action: handleLyrics, label: 'Lyrics', active: false },
     { icon: ListOrdered, action: () => setQueueOpen(true), label: 'Queue', active: false },
     { icon: Heart, action: () => toggleLike(currentSong), label: 'Like', active: liked },
-    { icon: Share2, action: handleShare, label: 'Share', active: false },
     { icon: Bell, action: handleRingtone, label: 'Ringtone', active: false },
   ];
 
