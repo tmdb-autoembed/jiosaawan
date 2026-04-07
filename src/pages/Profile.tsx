@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
-import { Heart, HeartCrack, Bookmark, ListMusic, Sliders, Play } from 'lucide-react';
+import { Heart, HeartCrack, Bookmark, ListMusic, Sliders, Play, Users, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getImg, decodeHtml } from '@/lib/api';
 
 const QUALITY_OPTIONS = [
   { value: '96kbps', label: '96 kbps', gradient: 'from-gray-500 to-gray-600' },
