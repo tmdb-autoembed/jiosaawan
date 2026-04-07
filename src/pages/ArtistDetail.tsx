@@ -147,7 +147,20 @@ const ArtistDetail = () => {
           </div>
         </div>
         <h2 className="text-xl font-black text-foreground mt-3">{decodeHtml(artist.name)}</h2>
-        {followers && <p className="text-xs text-muted-foreground mt-1">{Number(followers).toLocaleString()} followers</p>}
+        <div className="flex items-center gap-3 mt-2">
+          {followers && <p className="text-xs text-muted-foreground">{Number(followers).toLocaleString()} followers</p>}
+          <button
+            onClick={toggleFav}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              isFav
+                ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
+                : 'bg-secondary/60 text-foreground hover:bg-secondary'
+            }`}
+          >
+            <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-white' : ''}`} />
+            {isFav ? 'Favorited' : 'Favorite'}
+          </button>
+        </div>
       </motion.div>
 
       {/* Bio */}
