@@ -633,6 +633,40 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  const createCustomPlaylist = useCallback((name: string) => {
+    const id = 'cpl_' + Date.now();
+    setCustomPlaylists(prev => [...prev, { id, name, songs: [] }]);
+    toast.success(`Playlist "${name}" created`);
+    return id;
+  }, []);
+
+  const addToCustomPlaylist = useCallback((playlistId: string, song: any) => {
+    setCustomPlaylists(prev => prev.map(pl => {
+      if (pl.id !== playlistId) return pl;
+      if (pl.songs.some(s => s.id === song.id)) { toast.info('Already in playlist'); return pl; }
+      toast.success(`Added to "${pl.name}"`);
+      return { ...pl, songs: [...pl.songs, song] };
+    }));
+  }, []);
+
+  const removeFromCustomPlaylist = useCallback((playlistId: string, songId: string) => {
+    setCustomPlaylists(prev => prev.map(pl => {
+      if (pl.id !== playlistId) return pl;
+      return { ...pl, songs: pl.songs.filter(s => s.id !== songId) };
+    }));
+    toast.info('Removed from playlist');
+  }, []);
+
+  const deleteCustomPlaylist = useCallback((playlistId: string) => {
+    setCustomPlaylists(prev => prev.filter(pl => pl.id !== playlistId));
+    toast.info('Playlist deleted');
+  }, []);
+
+  const renameCustomPlaylist = useCallback((playlistId: string, name: string) => {
+    setCustomPlaylists(prev => prev.map(pl => pl.id === playlistId ? { ...pl, name } : pl));
+    toast.success('Playlist renamed');
+  }, []);
+
   const stopPlayer = useCallback(() => {
     const audio = audioRef.current;
     if (audio) { audio.pause(); audio.src = ''; }
