@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { getImg, getArtistStr, fmtTime, getUrlForQuality, getAudioUrl, getSongRingtone, decodeHtml } from '@/lib/api';
-import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Heart, Download, Sliders, Bell, Infinity as InfinityIcon, Power } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Mic, ListOrdered, Heart, Download, Sliders, Bell, Power } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
