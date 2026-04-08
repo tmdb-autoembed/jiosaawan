@@ -30,7 +30,9 @@ const getColor = (id: string, offset = 0) => {
 };
 
 const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemProps) => {
-  const { currentSong, isPlaying, playQueue, loadAndPlay } = usePlayer();
+  const { currentSong, isPlaying, playQueue, loadAndPlay, customPlaylists, addToCustomPlaylist } = usePlayer();
+  const [showPlMenu, setShowPlMenu] = useState(false);
+  const isActive = currentSong?.id === song.id;
   const isActive = currentSong?.id === song.id;
 
   const imgUrl = getImg(song.image, '150x150');
