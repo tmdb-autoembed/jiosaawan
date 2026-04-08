@@ -141,6 +141,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [preferredQuality, setPreferredQuality] = useState(() =>
     localStorage.getItem('preferredQuality') || '320kbps'
   );
+  const [customPlaylists, setCustomPlaylists] = useState<{ id: string; name: string; songs: any[] }[]>(() => {
+    try { return JSON.parse(localStorage.getItem('customPlaylists') || '[]'); } catch { return []; }
+  });
 
   // Persist
   useEffect(() => { localStorage.setItem('liked', JSON.stringify(likedSongs)); }, [likedSongs]);
