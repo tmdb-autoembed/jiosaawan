@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { getImg, getArtistStr, fmtTime, decodeHtml } from '@/lib/api';
 import { usePlayer } from '@/contexts/PlayerContext';
 import WaveBars from './WaveBars';
-import { Music } from 'lucide-react';
+import { Music, Plus, Check } from 'lucide-react';
 
 
 interface SongItemProps {
