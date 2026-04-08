@@ -230,14 +230,40 @@ const Index = () => {
       {/* Bhojpuri */}
       <LanguageSongsSection language="Bhojpuri" emoji="🪘" icon={<Music className="w-4 h-4 text-white" />} gradient="from-rose-500 to-red-500" />
 
-      {/* Tamil */}
-      <LanguageSongsSection language="Tamil" emoji="🎼" icon={<Music className="w-4 h-4 text-white" />} gradient="from-emerald-500 to-teal-500" />
-
-      {/* Telugu */}
-      <LanguageSongsSection language="Telugu" emoji="🎹" icon={<Music className="w-4 h-4 text-white" />} gradient="from-purple-500 to-pink-500" />
-
-      {/* Bengali */}
-      <LanguageSongsSection language="Bengali" emoji="🪕" icon={<Music className="w-4 h-4 text-white" />} gradient="from-cyan-500 to-blue-500" />
+      {/* Quick Search Shortcuts */}
+      <motion.section initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+            <Zap className="w-4 h-4 text-white" />
+          </div>
+          <h2 className="text-base font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Quick Search</h2>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {[
+            { label: '😊 Happy', query: 'happy songs' },
+            { label: '😢 Sad', query: 'sad songs' },
+            { label: '🎉 Party', query: 'party songs' },
+            { label: '💕 Romantic', query: 'romantic songs' },
+            { label: '🏋️ Workout', query: 'workout songs' },
+            { label: '😴 Chill', query: 'chill songs' },
+            { label: '🎸 Rock', query: 'rock songs hindi' },
+            { label: '🎤 Rap', query: 'rap songs hindi' },
+            { label: '🕺 Dance', query: 'dance songs' },
+            { label: '📿 Devotional', query: 'devotional songs' },
+            { label: '👶 Kids', query: 'kids songs hindi' },
+            { label: '🎵 Lo-Fi', query: 'lofi songs' },
+          ].map(({ label, query }) => (
+            <button
+              key={query}
+              onClick={() => navigate(`/search?q=${encodeURIComponent(query)}`)}
+              className="px-3 py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:scale-105 active:scale-95"
+              style={{ background: 'linear-gradient(135deg, hsla(250, 20%, 18%, 0.8), hsla(280, 30%, 15%, 0.8))' }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </motion.section>
 
       {/* All main sections */}
       {sections.map((s, i) => renderSection(s.key, s.title, s.items, s.renderType, s.seeAll, i))}
