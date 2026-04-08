@@ -485,10 +485,30 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           });
         } catch {}
       }
+
+      // Preload next 3 songs
+      preloadNextSongs();
     } catch {
       toast.error('Failed to load song');
     }
   };
+
+  const preloadNextSongs = useCallback(() => {
+    const startIdx = queueIdx + 1;
+    for (let i = 0; i < 3 && startIdx + i < queue.length; i++) {
+      const nextSong = queue[startIdx + i];
+      if (nextSong) {
+        const preloadUrl = getAudioUrl(nextSong, preferredQuality);
+        if (preloadUrl) {
+          const preloadAudio = new Audio();
+          preloadAudio.preload = 'auto';
+          preloadAudio.src = preloadUrl;
+          // Just load enough to buffer, don't play
+          preloadAudio.load();
+        }
+      }
+    }
+  }, [queue, queueIdx, preferredQuality]);
 
   const loadAndPlay = useCallback(async (song: any) => {
     const existingIdx = queue.findIndex(s => s.id === song.id);
