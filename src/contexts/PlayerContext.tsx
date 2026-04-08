@@ -150,6 +150,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => { localStorage.setItem('savedPlaylists', JSON.stringify(savedPlaylists)); }, [savedPlaylists]);
   useEffect(() => { localStorage.setItem('preferredQuality', preferredQuality); }, [preferredQuality]);
   useEffect(() => { localStorage.setItem('audioEffects', JSON.stringify(audioEffects)); }, [audioEffects]);
+  useEffect(() => { localStorage.setItem('customPlaylists', JSON.stringify(customPlaylists)); }, [customPlaylists]);
   useEffect(() => { localStorage.setItem('autoPlay', String(autoPlay)); }, [autoPlay]);
 
   // Persist playback state
