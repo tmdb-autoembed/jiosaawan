@@ -55,6 +55,11 @@ interface PlayerContextType extends PlayerState {
   setAudioEffects: (effects: AudioEffects) => void;
   toggleAutoPlay: () => void;
   toggleEqualizer: () => void;
+  createCustomPlaylist: (name: string) => string;
+  addToCustomPlaylist: (playlistId: string, song: any) => void;
+  removeFromCustomPlaylist: (playlistId: string, songId: string) => void;
+  deleteCustomPlaylist: (playlistId: string) => void;
+  renameCustomPlaylist: (playlistId: string, name: string) => void;
 }
 
 const DEFAULT_EFFECTS: AudioEffects = {
