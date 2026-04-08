@@ -29,6 +29,7 @@ interface PlayerState {
   queueOpen: boolean;
   audioEffects: AudioEffects;
   autoPlay: boolean;
+  customPlaylists: { id: string; name: string; songs: any[] }[];
 }
 
 interface PlayerContextType extends PlayerState {
