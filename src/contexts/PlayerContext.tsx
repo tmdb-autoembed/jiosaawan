@@ -29,6 +29,7 @@ interface PlayerState {
   queueOpen: boolean;
   audioEffects: AudioEffects;
   autoPlay: boolean;
+  customPlaylists: { id: string; name: string; songs: any[] }[];
 }
 
 interface PlayerContextType extends PlayerState {
@@ -54,6 +55,11 @@ interface PlayerContextType extends PlayerState {
   setAudioEffects: (effects: AudioEffects) => void;
   toggleAutoPlay: () => void;
   toggleEqualizer: () => void;
+  createCustomPlaylist: (name: string) => string;
+  addToCustomPlaylist: (playlistId: string, song: any) => void;
+  removeFromCustomPlaylist: (playlistId: string, songId: string) => void;
+  deleteCustomPlaylist: (playlistId: string) => void;
+  renameCustomPlaylist: (playlistId: string, name: string) => void;
 }
 
 const DEFAULT_EFFECTS: AudioEffects = {
@@ -135,12 +141,16 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [preferredQuality, setPreferredQuality] = useState(() =>
     localStorage.getItem('preferredQuality') || '320kbps'
   );
+  const [customPlaylists, setCustomPlaylists] = useState<{ id: string; name: string; songs: any[] }[]>(() => {
+    try { return JSON.parse(localStorage.getItem('customPlaylists') || '[]'); } catch { return []; }
+  });
 
   // Persist
   useEffect(() => { localStorage.setItem('liked', JSON.stringify(likedSongs)); }, [likedSongs]);
   useEffect(() => { localStorage.setItem('savedPlaylists', JSON.stringify(savedPlaylists)); }, [savedPlaylists]);
   useEffect(() => { localStorage.setItem('preferredQuality', preferredQuality); }, [preferredQuality]);
   useEffect(() => { localStorage.setItem('audioEffects', JSON.stringify(audioEffects)); }, [audioEffects]);
+  useEffect(() => { localStorage.setItem('customPlaylists', JSON.stringify(customPlaylists)); }, [customPlaylists]);
   useEffect(() => { localStorage.setItem('autoPlay', String(autoPlay)); }, [autoPlay]);
 
   // Persist playback state
@@ -429,8 +439,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const playNextInternal = useCallback(() => {
     if (queue.length === 0) return;
-    const isLastSong = queueIdx >= queue.length - 1;
-    if (isLastSong && autoPlay && currentSong?.id) {
+    const isNearEnd = queueIdx >= queue.length - 3;
+    if (isNearEnd && currentSong?.id) {
       fetchAndAppendSuggestions(currentSong.id);
     }
     let nextIdx: number;
@@ -441,7 +451,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setQueueIdx(nextIdx);
     loadSong(queue[nextIdx]);
-  }, [queue, queueIdx, shuffle, autoPlay, currentSong]);
+  }, [queue, queueIdx, shuffle, currentSong]);
 
   const loadSong = async (song: any) => {
     const audio = audioRef.current;
@@ -475,10 +485,30 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           });
         } catch {}
       }
+
+      // Preload next 3 songs
+      preloadNextSongs();
     } catch {
       toast.error('Failed to load song');
     }
   };
+
+  const preloadNextSongs = useCallback(() => {
+    const startIdx = queueIdx + 1;
+    for (let i = 0; i < 3 && startIdx + i < queue.length; i++) {
+      const nextSong = queue[startIdx + i];
+      if (nextSong) {
+        const preloadUrl = getAudioUrl(nextSong, preferredQuality);
+        if (preloadUrl) {
+          const preloadAudio = new Audio();
+          preloadAudio.preload = 'auto';
+          preloadAudio.src = preloadUrl;
+          // Just load enough to buffer, don't play
+          preloadAudio.load();
+        }
+      }
+    }
+  }, [queue, queueIdx, preferredQuality]);
 
   const loadAndPlay = useCallback(async (song: any) => {
     const existingIdx = queue.findIndex(s => s.id === song.id);
@@ -511,8 +541,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (audio) { audio.currentTime = 0; audio.play(); }
       return;
     }
-    const isLastSong = queueIdx >= queue.length - 1;
-    if (isLastSong && autoPlay && currentSong?.id) {
+    const isNearEnd = queueIdx >= queue.length - 3;
+    if (isNearEnd && currentSong?.id) {
       fetchAndAppendSuggestions(currentSong.id);
     }
     let nextIdx: number;
@@ -520,7 +550,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     else nextIdx = (queueIdx + 1) % queue.length;
     setQueueIdx(nextIdx);
     loadSong(queue[nextIdx]);
-  }, [queue, queueIdx, shuffle, repeat, preferredQuality, audioEffects.speed, autoPlay, currentSong]);
+  }, [queue, queueIdx, shuffle, repeat, preferredQuality, audioEffects.speed, currentSong]);
 
   const playPrev = useCallback(() => {
     if (queue.length === 0) return;
@@ -623,6 +653,40 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  const createCustomPlaylist = useCallback((name: string) => {
+    const id = 'cpl_' + Date.now();
+    setCustomPlaylists(prev => [...prev, { id, name, songs: [] }]);
+    toast.success(`Playlist "${name}" created`);
+    return id;
+  }, []);
+
+  const addToCustomPlaylist = useCallback((playlistId: string, song: any) => {
+    setCustomPlaylists(prev => prev.map(pl => {
+      if (pl.id !== playlistId) return pl;
+      if (pl.songs.some(s => s.id === song.id)) { toast.info('Already in playlist'); return pl; }
+      toast.success(`Added to "${pl.name}"`);
+      return { ...pl, songs: [...pl.songs, song] };
+    }));
+  }, []);
+
+  const removeFromCustomPlaylist = useCallback((playlistId: string, songId: string) => {
+    setCustomPlaylists(prev => prev.map(pl => {
+      if (pl.id !== playlistId) return pl;
+      return { ...pl, songs: pl.songs.filter(s => s.id !== songId) };
+    }));
+    toast.info('Removed from playlist');
+  }, []);
+
+  const deleteCustomPlaylist = useCallback((playlistId: string) => {
+    setCustomPlaylists(prev => prev.filter(pl => pl.id !== playlistId));
+    toast.info('Playlist deleted');
+  }, []);
+
+  const renameCustomPlaylist = useCallback((playlistId: string, name: string) => {
+    setCustomPlaylists(prev => prev.map(pl => pl.id === playlistId ? { ...pl, name } : pl));
+    toast.success('Playlist renamed');
+  }, []);
+
   const stopPlayer = useCallback(() => {
     const audio = audioRef.current;
     if (audio) { audio.pause(); audio.src = ''; }
@@ -672,12 +736,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <PlayerContext.Provider value={{
       currentSong, queue, queueIdx, isPlaying, currentTime, duration,
       volume, shuffle, repeat, likedSongs, savedPlaylists, preferredQuality,
-      expandedOpen, queueOpen, audioRef, audioEffects, autoPlay,
+      expandedOpen, queueOpen, audioRef, audioEffects, autoPlay, customPlaylists,
       loadAndPlay, playQueue, togglePlay, playNext, playPrev,
       toggleShuffle, toggleRepeat, setVolume, seek, toggleLike, isLiked,
       savePlaylist, unsavePlaylist, isPlaylistSaved, setQuality,
       setExpandedOpen, setQueueOpen, stopPlayer, setAudioEffects, toggleAutoPlay,
-      toggleEqualizer,
+      toggleEqualizer, createCustomPlaylist, addToCustomPlaylist,
+      removeFromCustomPlaylist, deleteCustomPlaylist, renameCustomPlaylist,
     }}>
       {children}
       <audio ref={audioRef} preload="metadata" crossOrigin="anonymous" />
