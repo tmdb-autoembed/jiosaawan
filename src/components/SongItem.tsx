@@ -33,7 +33,6 @@ const SongItem = ({ song, songList, songIdx = -1, showMeta = true }: SongItemPro
   const { currentSong, isPlaying, playQueue, loadAndPlay, customPlaylists, addToCustomPlaylist } = usePlayer();
   const [showPlMenu, setShowPlMenu] = useState(false);
   const isActive = currentSong?.id === song.id;
-  const isActive = currentSong?.id === song.id;
 
   const imgUrl = getImg(song.image, '150x150');
   const artist = getArtistStr(song);
