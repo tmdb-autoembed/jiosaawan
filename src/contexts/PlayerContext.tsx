@@ -716,12 +716,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <PlayerContext.Provider value={{
       currentSong, queue, queueIdx, isPlaying, currentTime, duration,
       volume, shuffle, repeat, likedSongs, savedPlaylists, preferredQuality,
-      expandedOpen, queueOpen, audioRef, audioEffects, autoPlay,
+      expandedOpen, queueOpen, audioRef, audioEffects, autoPlay, customPlaylists,
       loadAndPlay, playQueue, togglePlay, playNext, playPrev,
       toggleShuffle, toggleRepeat, setVolume, seek, toggleLike, isLiked,
       savePlaylist, unsavePlaylist, isPlaylistSaved, setQuality,
       setExpandedOpen, setQueueOpen, stopPlayer, setAudioEffects, toggleAutoPlay,
-      toggleEqualizer,
+      toggleEqualizer, createCustomPlaylist, addToCustomPlaylist,
+      removeFromCustomPlaylist, deleteCustomPlaylist, renameCustomPlaylist,
     }}>
       {children}
       <audio ref={audioRef} preload="metadata" crossOrigin="anonymous" />
