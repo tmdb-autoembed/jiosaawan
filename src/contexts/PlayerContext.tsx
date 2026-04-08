@@ -439,8 +439,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const playNextInternal = useCallback(() => {
     if (queue.length === 0) return;
-    const isLastSong = queueIdx >= queue.length - 1;
-    if (isLastSong && autoPlay && currentSong?.id) {
+    const isNearEnd = queueIdx >= queue.length - 3;
+    if (isNearEnd && currentSong?.id) {
       fetchAndAppendSuggestions(currentSong.id);
     }
     let nextIdx: number;
@@ -451,7 +451,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setQueueIdx(nextIdx);
     loadSong(queue[nextIdx]);
-  }, [queue, queueIdx, shuffle, autoPlay, currentSong]);
+  }, [queue, queueIdx, shuffle, currentSong]);
 
   const loadSong = async (song: any) => {
     const audio = audioRef.current;
