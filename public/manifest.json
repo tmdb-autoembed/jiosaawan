@@ -1,21 +1,133 @@
 {
-  "name": "JioSaawan Music",
-  "short_name": "JioSaawan",
-  "description": "Stream and download music",
-  "start_url": "/",
+  "version": "1.0",
+  "id": "/",
+  "name": "Jio saavn unofficial ",
+  "short_name": "Jio saavn unofficial",
+  "description": "Jio saavn free for daly Life music listeners ",
+  "start_url": "https://jiosawan.blogspot.com/",
+  "dir": "auto",
+  "lang": "en-US",
+  "orientation": "Potrait",
   "display": "standalone",
-  "background_color": "#0a0a12",
-  "theme_color": "#e8622c",
+  "prefer_related_applications": false,
+  "background_color": "#FFFFFF",
+  "theme_color": "#4A90D9",
   "icons": [
     {
-      "src": "/placeholder.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
+      "src": "https://i.ibb.co/0yjfKMY1/2099a8ace044.png",
+      "sizes": "16x16",
+      "type": "image/png"
     },
     {
-      "src": "/placeholder.svg",
+      "src": "https://i.ibb.co/h1f43Lk0/95c09b50441a.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.ibb.co/Ndgwg8yj/9fc43084f4ff.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.ibb.co/cKYXDxrN/91e4ea6aaaa1.png",
+      "sizes": "57x57",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/7dFkWzhB/b6f491359070.png",
+      "sizes": "60x60",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/3YvZxvHf/87452f9466e6.png",
+      "sizes": "70x70",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/bgpJLk0n/17840b096e24.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.ibb.co/PvLTbpMh/05d75fa367a6.png",
+      "sizes": "76x76",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/ycxv5Fvt/18846f389379.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/1YKXnzhr/26123f9b662e.png",
+      "sizes": "114x114",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/kgfsKB1y/405bcae30d18.png",
+      "sizes": "120x120",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/JR5BHY6Z/dcf991aecfeb.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.ibb.co/v5fFf7B/29d842a564ca.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/GQ8Lyv2n/1196b09db7e7.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/9QSmzKC/ef2149b8875e.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.ibb.co/S4gj3yQy/3a68209856b6.png",
+      "sizes": "310x310",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/SXgmq2N3/226a3a9b1721.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://i.ibb.co/HDy19Ms9/adbcf28a2e1c.png",
+      "type": "image/png",
+      "sizes": "540x1200",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "https://i.ibb.co/RT1BZ7Ds/784672d117b7.png",
+      "type": "image/png",
+      "sizes": "540x1200",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "https://i.ibb.co/Zppdq9cQ/7caf50228208.png",
+      "type": "image/png",
+      "sizes": "540x1200",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "https://i.ibb.co/3yjZP0t7/409da7e9d8f3.png",
+      "type": "image/png",
+      "sizes": "540x1200",
+      "form_factor": "narrow"
     }
   ]
 }
