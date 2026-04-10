@@ -32,7 +32,7 @@ const App = () => (
     <TooltipProvider>
       <PlayerProvider>
         <Sonner position="top-center" />
-        <BrowserRouter>
+        <HashRouter>
           <Particles />
           <div className="min-h-screen max-w-[600px] mx-auto relative flex flex-col z-10">
             <TopBar />
@@ -64,7 +64,7 @@ const App = () => (
           <PlayerBar />
           <ExpandedPlayer />
           <QueuePanel />
-        </BrowserRouter>
+        </HashRouter>
       </PlayerProvider>
     </TooltipProvider>
   </QueryClientProvider>
