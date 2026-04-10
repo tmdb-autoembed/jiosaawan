@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import SongItem from '@/components/SongItem';
 import MusicCard from '@/components/MusicCard';
-import { Heart, HeartCrack, Bookmark, ListMusic, Sliders, Play, Users, X, Plus, Pencil, Trash2, Music, User } from 'lucide-react';
+import { Heart, HeartCrack, Bookmark, ListMusic, Sliders, Play, Users, X, Plus, Pencil, Trash2, Music, User, Camera, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getImg, decodeHtml } from '@/lib/api';
 import { toast } from 'sonner';
@@ -20,13 +20,16 @@ const Profile = () => {
     removeFromCustomPlaylist,
   } = usePlayer();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [favArtists, setFavArtists] = useState<any[]>([]);
   const [userName, setUserName] = useState(() => localStorage.getItem('user_name') || 'Music Lover');
+  const [profilePic, setProfilePic] = useState(() => localStorage.getItem('user_profile_pic') || '');
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState('');
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [showCreatePl, setShowCreatePl] = useState(false);
   const [expandedPl, setExpandedPl] = useState<string | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
     try { setFavArtists(JSON.parse(localStorage.getItem('fav_artists') || '[]')); } catch {}
@@ -53,12 +56,52 @@ const Profile = () => {
     setShowCreatePl(false);
   };
 
+  const handleProfilePic = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      toast.error('Image too large (max 500KB)');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setProfilePic(dataUrl);
+      localStorage.setItem('user_profile_pic', dataUrl);
+      toast.success('Profile pic updated!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearAll = () => {
+    localStorage.clear();
+    setUserName('Music Lover');
+    setProfilePic('');
+    setFavArtists([]);
+    setShowClearConfirm(false);
+    toast.success('All data cleared! Reload to reset fully.');
+    setTimeout(() => window.location.reload(), 1000);
+  };
+
   return (
     <div className="p-4 pb-40">
       {/* Profile Header */}
       <div className="flex items-center gap-4 mb-6 p-4 rounded-2xl" style={{ background: 'linear-gradient(135deg, hsla(280, 40%, 15%, 0.6), hsla(340, 30%, 12%, 0.5))' }}>
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
-          <User className="w-8 h-8 text-white" />
+        <div className="relative flex-shrink-0">
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            {profilePic ? (
+              <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-8 h-8 text-white" />
+            )}
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center ring-2 ring-background"
+          >
+            <Camera className="w-3 h-3 text-white" />
+          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleProfilePic} />
         </div>
         <div className="flex-1 min-w-0">
           {editingName ? (
@@ -270,6 +313,36 @@ const Profile = () => {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Clear All Data */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center">
+            <Trash2 className="w-3.5 h-3.5 text-white" />
+          </div>
+          <h2 className="text-sm font-black text-white">Clear All Data</h2>
+        </div>
+        {!showClearConfirm ? (
+          <button
+            onClick={() => setShowClearConfirm(true)}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-red-400 border border-red-500/30 hover:bg-red-500/10 transition-colors"
+          >
+            Clear all saved data
+          </button>
+        ) : (
+          <div className="p-3 rounded-xl border border-red-500/30" style={{ background: 'hsla(0, 50%, 15%, 0.4)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+              <p className="text-xs text-red-400 font-bold">This will delete everything!</p>
+            </div>
+            <p className="text-[11px] mb-3" style={{ color: '#ccc' }}>Liked songs, playlists, profile pic, name — sab clear ho jayega.</p>
+            <div className="flex gap-2">
+              <button onClick={handleClearAll} className="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold">Yes, Clear All</button>
+              <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 rounded-xl text-xs font-bold text-white/50 hover:text-white" style={{ background: 'hsla(250, 18%, 16%, 0.5)' }}>Cancel</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
